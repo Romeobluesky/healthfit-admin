@@ -20,7 +20,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       profileImage: null,
       login: (user) => set({ user, isAuthenticated: true }),
-      logout: () => set({ user: null, isAuthenticated: false, profileImage: null }),
+      logout: () => set({ user: null, isAuthenticated: false }),
       setProfileImage: (image) => set({ profileImage: image }),
     }),
     {

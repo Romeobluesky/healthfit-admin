@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileCheck, ClipboardList, KeyRound, Server, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, FileCheck, ClipboardList, KeyRound, Server, TrendingUp, TrendingDown, LayoutDashboard } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -137,23 +137,23 @@ export default function DashboardPage() {
       icon: Users,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/40",
-      cardBg: "bg-blue-50/60 dark:bg-blue-950/20",
+      cardBg: "bg-blue-50/60 dark:bg-blue-950",
     },
     {
-      title: "건강검진",
+      title: "건강검진고객",
       value: stats.checkUpCount,
       icon: FileCheck,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/40",
-      cardBg: "bg-emerald-50/60 dark:bg-emerald-950/20",
+      cardBg: "bg-emerald-50/60 dark:bg-emerald-950",
     },
     {
-      title: "설문조사",
+      title: "일반설문조사고객",
       value: stats.surveyCount,
       icon: ClipboardList,
       color: "text-violet-600 dark:text-violet-400",
       bg: "bg-violet-50 dark:bg-violet-950/40",
-      cardBg: "bg-violet-50/60 dark:bg-violet-950/20",
+      cardBg: "bg-violet-50/60 dark:bg-violet-950",
     },
     {
       title: "서비스코드",
@@ -161,14 +161,14 @@ export default function DashboardPage() {
       icon: KeyRound,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/40",
-      cardBg: "bg-amber-50/60 dark:bg-amber-950/20",
+      cardBg: "bg-amber-50/60 dark:bg-orange-950",
     },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">대시보드</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><LayoutDashboard className="h-6 w-6" />대시보드</h1>
         <p className="text-sm text-muted-foreground mt-1">
           HealthFit 서비스 현황을 한눈에 확인하세요
         </p>
@@ -283,7 +283,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* 성별 분포 파이 차트 */}
-        <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-950/15">
+        <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-950/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">성별 분포</CardTitle>
             <p className="text-xs text-muted-foreground">전체 회원 성별 비율</p>

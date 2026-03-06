@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Trash2, FileText, Search } from "lucide-react";
+import { Trash2, FileText, Search, Users } from "lucide-react";
 import { memberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isSuperAdmin } from "@/lib/permission";
@@ -76,19 +76,19 @@ export default function CustomersPage() {
     type: "simple" | "general";
   }) => (
     <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-16">번호</TableHead>
-          <TableHead>이름</TableHead>
-          <TableHead>전화번호</TableHead>
-          <TableHead>생년월일</TableHead>
-          <TableHead>성별</TableHead>
-          <TableHead>등록일</TableHead>
-          <TableHead className="w-24">
+      <TableHeader className="bg-[#4a7fb5]">
+        <TableRow className="border-none hover:bg-transparent">
+          <TableHead className="w-16 text-white">번호</TableHead>
+          <TableHead className="text-white">이름</TableHead>
+          <TableHead className="text-white">전화번호</TableHead>
+          <TableHead className="text-white">생년월일</TableHead>
+          <TableHead className="text-white">성별</TableHead>
+          <TableHead className="text-white">등록일</TableHead>
+          <TableHead className="w-24 text-white">
             {type === "simple" ? "리포트보기" : "설문내역보기"}
           </TableHead>
           {user && isSuperAdmin(user.permission) && (
-            <TableHead className="w-16">삭제</TableHead>
+            <TableHead className="w-16 text-white">삭제</TableHead>
           )}
         </TableRow>
       </TableHeader>
@@ -145,7 +145,7 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">고객관리</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold"><Users className="h-6 w-6" />고객관리</h1>
         <p className="text-muted-foreground">간편인증 및 일반 고객 관리</p>
       </div>
 

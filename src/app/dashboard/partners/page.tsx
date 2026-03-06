@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Handshake } from "lucide-react";
 import { managerMemberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isSuperAdmin } from "@/lib/permission";
@@ -149,7 +149,7 @@ export default function PartnersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">파트너관리</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-bold"><Handshake className="h-6 w-6" />파트너관리</h1>
           <p className="text-muted-foreground">파트너 및 관리자 계정 관리</p>
         </div>
         <Button onClick={openCreateDialog}>
@@ -164,16 +164,16 @@ export default function PartnersPage() {
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">번호</TableHead>
-                <TableHead>파트너명</TableHead>
-                <TableHead>아이디</TableHead>
-                <TableHead>전화번호</TableHead>
-                <TableHead>소속</TableHead>
-                <TableHead>생성일</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead className="w-24">관리</TableHead>
+            <TableHeader className="bg-[#4a7fb5]">
+              <TableRow className="border-none hover:bg-transparent">
+                <TableHead className="w-16 text-white">번호</TableHead>
+                <TableHead className="text-white">파트너명</TableHead>
+                <TableHead className="text-white">아이디</TableHead>
+                <TableHead className="text-white">전화번호</TableHead>
+                <TableHead className="text-white">소속</TableHead>
+                <TableHead className="text-white">생성일</TableHead>
+                <TableHead className="text-white">상태</TableHead>
+                <TableHead className="w-24 text-white">관리</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -2,31 +2,24 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Users,
   Handshake,
   KeyRound,
   Settings,
-  LogOut,
-  User,
 } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useAuthStore } from "@/store/auth";
-import { getPermissionLabel } from "@/lib/permission";
-import { useRouter } from "next/navigation";
 
 const menuItems = [
   {
@@ -58,25 +51,17 @@ const menuItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, logout, profileImage } = useAuthStore();
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-4">
+      <SidebarHeader className="border-b px-6 py-4 bg-[#1e3a5f] text-white">
         <Link href="/dashboard" className="flex items-center gap-2">
+          <Image src="/icon.png" alt="HealthFit" width={28} height={28} />
           <span className="text-lg font-bold">HealthFit</span>
-          <span className="text-xs text-muted-foreground">Admin</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>메뉴</SidebarGroupLabel>
+        <SidebarGroup className="pt-4">
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
@@ -99,34 +84,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4">
-        {user && (
-          <div className="mb-2 flex items-center gap-3">
-            <Avatar size="lg">
-              {profileImage ? (
-                <AvatarImage src={profileImage} alt={user.name} />
-              ) : null}
-              <AvatarFallback>
-                <User className="h-4 w-4" />
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 text-sm">
-              <p className="font-medium truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {getPermissionLabel(user.permission)} · {user.organization}
-              </p>
-            </div>
-          </div>
-        )}
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout}>
-              <LogOut className="h-4 w-4" />
-              <span>로그아웃</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
     </Sidebar>
   );
 }

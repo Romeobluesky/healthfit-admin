@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Camera, Trash2, User } from "lucide-react";
+import { Camera, Trash2, User, Settings } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { getPermissionLabel } from "@/lib/permission";
 import { managerMemberApi } from "@/lib/api";
@@ -24,6 +24,24 @@ export default function SettingsPage() {
 
   if (!user) return null;
 
+  const cropToSquare = (src: string): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const size = Math.min(img.width, img.height);
+        const x = (img.width - size) / 2;
+        const y = (img.height - size) / 2;
+        const canvas = document.createElement("canvas");
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, x, y, size, size, 0, 0, 256, 256);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.src = src;
+    });
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -34,12 +52,14 @@ export default function SettingsPage() {
     }
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const result = event.target?.result as string;
-      setProfileImage(result);
+      const cropped = await cropToSquare(result);
+      setProfileImage(cropped);
       setMessage("프로필 사진이 변경되었습니다.");
     };
     reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleSave = async () => {
@@ -62,46 +82,52 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">환경설정</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold"><Settings className="h-6 w-6" />환경설정</h1>
         <p className="text-muted-foreground">내 정보 관리</p>
       </div>
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle>프로필 사진</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-5">
-            <div className="relative group">
-              <Avatar className="h-20 w-20">
+      <div className="flex gap-6">
+        <Card className="w-64 shrink-0">
+          <CardHeader>
+            <CardTitle>프로필 사진</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative group">
                 {profileImage ? (
-                  <AvatarImage src={profileImage} alt={user.name} />
-                ) : null}
-                <AvatarFallback className="text-lg">
-                  <User className="h-8 w-8" />
-                </AvatarFallback>
-              </Avatar>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              >
-                <Camera className="h-5 w-5 text-white" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{user.name}</p>
-              <p className="text-xs text-muted-foreground">
-                JPG, PNG (최대 2MB)
-              </p>
-              <div className="flex gap-2 pt-1">
+                  <Avatar className="h-24 w-24 ring-2 ring-border">
+                    <AvatarImage src={profileImage} alt={user.name} />
+                    <AvatarFallback className="text-lg">
+                      <User className="h-10 w-10" />
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full ring-2 ring-border bg-muted">
+                    <User className="h-10 w-10 text-muted-foreground" />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                >
+                  <Camera className="h-6 w-6 text-white" />
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-medium">{user.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  JPG, PNG (최대 2MB)
+                </p>
+              </div>
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -124,57 +150,57 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle>내 정보</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>아이디</Label>
-            <Input value={user.id} disabled />
-          </div>
-          <div className="space-y-2">
-            <Label>권한</Label>
-            <div>
-              <Badge>{getPermissionLabel(user.permission)}</Badge>
+        <Card className="flex-1 max-w-lg">
+          <CardHeader>
+            <CardTitle>내 정보</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>아이디</Label>
+              <Input value={user.id} disabled />
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label>이름</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>전화번호</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>소속</Label>
-            <Input
-              value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>비밀번호 변경 (변경 시에만 입력)</Label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="새 비밀번호"
-            />
-          </div>
-          {message && (
-            <p className="text-sm text-muted-foreground">{message}</p>
-          )}
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "저장 중..." : "저장"}
-          </Button>
-        </CardContent>
-      </Card>
+            <div className="space-y-2">
+              <Label>권한</Label>
+              <div>
+                <Badge>{getPermissionLabel(user.permission)}</Badge>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>이름</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>전화번호</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>소속</Label>
+              <Input
+                value={organization}
+                onChange={(e) => setOrganization(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>비밀번호 변경 (변경 시에만 입력)</Label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="새 비밀번호"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground h-5">
+              {message || "\u00A0"}
+            </p>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "저장 중..." : "저장"}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

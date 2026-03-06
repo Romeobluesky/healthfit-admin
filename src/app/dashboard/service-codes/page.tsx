@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Search, KeyRound } from "lucide-react";
 import { serviceCodeApi } from "@/lib/api";
 import type { ServiceCode } from "@/types";
 
@@ -58,7 +58,7 @@ export default function ServiceCodesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">서비스코드관리</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold"><KeyRound className="h-6 w-6" />서비스코드관리</h1>
         <p className="text-muted-foreground">서비스코드 발급 및 관리</p>
       </div>
 
@@ -77,13 +77,13 @@ export default function ServiceCodesPage() {
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">번호</TableHead>
-                <TableHead>코드</TableHead>
-                <TableHead>사용 회원</TableHead>
-                <TableHead>상태</TableHead>
-                <TableHead>생성일</TableHead>
+            <TableHeader className="bg-[#4a7fb5]">
+              <TableRow className="border-none hover:bg-transparent">
+                <TableHead className="w-16 text-white">번호</TableHead>
+                <TableHead className="text-white">코드</TableHead>
+                <TableHead className="text-white">사용 회원</TableHead>
+                <TableHead className="text-white">상태</TableHead>
+                <TableHead className="text-white">생성일</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
