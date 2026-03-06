@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx shadcn@latest add button card input label table badge dialog dropdown-menu separator sheet sidebar avatar tooltip select tabs textarea --yes)",
+      "Bash(npm install next-themes zustand)",
+      "Bash(npm install recharts)",
+      "Bash(npx next build)",
+      "Bash(curl -s -X POST \"https://healthfit.autocallup.com/managerMember/login/admin\" -H \"Content-Type: application/json\" -d '{\"\"password\"\":\"\"gpftmvlt!@#$1234\"\"}')",
+      "Bash(npx -y bcryptjs-cli hash 'gpftmvlt!@#$1234')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://healthfit.autocallup.com/server/status\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"https://healthfit.autocallup.com:9001/server/status\")"
+    ]
+  }
+}
