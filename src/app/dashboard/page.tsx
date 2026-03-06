@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileCheck, ClipboardList, KeyRound, Server } from "lucide-react";
+import { Users, FileCheck, ClipboardList, KeyRound, Server, TrendingUp, TrendingDown } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -28,13 +28,15 @@ interface DashboardStats {
   serverStatus: string;
 }
 
-const PIE_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
-];
+const CHART_COLORS = {
+  blue: "#3b82f6",
+  emerald: "#10b981",
+  violet: "#8b5cf6",
+  amber: "#f59e0b",
+  rose: "#f43f5e",
+};
+
+const PIE_COLORS = [CHART_COLORS.blue, CHART_COLORS.rose, CHART_COLORS.amber];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -82,10 +84,7 @@ export default function DashboardPage() {
             server.status === "fulfilled" ? "정상" : "연결 실패",
         });
 
-        // 월별 등록 현황 (최근 6개월)
         buildMonthlyChart(memberList, checkUpList);
-
-        // 성별 분포
         buildGenderChart(memberList);
       } catch {
         setStats((prev) => ({ ...prev, serverStatus: "오류" }));
@@ -136,98 +135,146 @@ export default function DashboardPage() {
       title: "전체 회원",
       value: stats.memberCount,
       icon: Users,
-      description: "등록된 전체 회원 수",
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-950/40",
+      cardBg: "bg-blue-50/60 dark:bg-blue-950/20",
     },
     {
       title: "건강검진",
       value: stats.checkUpCount,
       icon: FileCheck,
-      description: "전체 검진 기록 수",
+      color: "text-emerald-600 dark:text-emerald-400",
+      bg: "bg-emerald-50 dark:bg-emerald-950/40",
+      cardBg: "bg-emerald-50/60 dark:bg-emerald-950/20",
     },
     {
       title: "설문조사",
       value: stats.surveyCount,
       icon: ClipboardList,
-      description: "전체 설문 응답 수",
+      color: "text-violet-600 dark:text-violet-400",
+      bg: "bg-violet-50 dark:bg-violet-950/40",
+      cardBg: "bg-violet-50/60 dark:bg-violet-950/20",
     },
     {
       title: "서비스코드",
       value: stats.serviceCodeCount,
       icon: KeyRound,
-      description: "발급된 서비스코드 수",
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-50 dark:bg-amber-950/40",
+      cardBg: "bg-amber-50/60 dark:bg-amber-950/20",
     },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">대시보드</h1>
-        <p className="text-muted-foreground">HealthFit 관리자 현황</p>
+        <h1 className="text-2xl font-semibold tracking-tight">대시보드</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          HealthFit 서비스 현황을 한눈에 확인하세요
+        </p>
+      </div>
+
+      {/* 서버 상태 */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className={`h-2 w-2 rounded-full ${
+            stats.serverStatus === "정상"
+              ? "bg-emerald-500 animate-pulse"
+              : stats.serverStatus === "확인 중..."
+                ? "bg-amber-500 animate-pulse"
+                : "bg-red-500"
+          }`} />
+          <span className="text-sm text-muted-foreground">
+            API 서버
+          </span>
+          <Badge
+            variant={stats.serverStatus === "정상" ? "secondary" : "destructive"}
+            className="text-xs font-normal"
+          >
+            {stats.serverStatus}
+          </Badge>
+        </div>
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">
-                {card.title}
-              </CardTitle>
-              <card.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="h-8 w-20 animate-pulse rounded bg-muted" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {card.value.toLocaleString()}
+          <Card key={card.title} className={`border-0 shadow-sm ${card.cardBg}`}>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
+                  {loading ? (
+                    <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+                  ) : (
+                    <p className="text-3xl font-bold tracking-tight">
+                      {card.value.toLocaleString()}
+                    </p>
+                  )}
                 </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                {card.description}
-              </p>
+                <div className={`rounded-xl p-3 ${card.bg}`}>
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* 그래프 영역 */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-7">
         {/* 월별 등록 현황 바 차트 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">
-              월별 등록 현황 (최근 6개월)
+        <Card className="lg:col-span-4 border-0 shadow-sm bg-sky-50/50 dark:bg-sky-950/15">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">
+              월별 등록 현황
             </CardTitle>
+            <p className="text-xs text-muted-foreground">최근 6개월 회원 및 검진 등록 추이</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             {loading ? (
-              <div className="h-75 animate-pulse rounded bg-muted" />
+              <div className="h-70 animate-pulse rounded-lg bg-muted" />
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" className="text-xs" />
-                  <YAxis className="text-xs" />
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={monthlyData} barGap={4} barSize={20}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="var(--color-border)"
+                    strokeOpacity={0.5}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  />
                   <Tooltip
+                    cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                      color: "hsl(var(--card-foreground))",
+                      backgroundColor: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontSize: "13px",
                     }}
                   />
                   <Bar
                     dataKey="members"
                     name="회원 등록"
-                    fill="hsl(var(--chart-1))"
-                    radius={[4, 4, 0, 0]}
+                    fill={CHART_COLORS.blue}
+                    radius={[6, 6, 0, 0]}
                   />
                   <Bar
                     dataKey="checkUps"
                     name="검진 등록"
-                    fill="hsl(var(--chart-2))"
-                    radius={[4, 4, 0, 0]}
+                    fill={CHART_COLORS.emerald}
+                    radius={[6, 6, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -236,31 +283,43 @@ export default function DashboardPage() {
         </Card>
 
         {/* 성별 분포 파이 차트 */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">회원 성별 분포</CardTitle>
+        <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-950/15">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-medium">성별 분포</CardTitle>
+            <p className="text-xs text-muted-foreground">전체 회원 성별 비율</p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-2">
             {loading ? (
-              <div className="h-75 animate-pulse rounded bg-muted" />
+              <div className="h-70 animate-pulse rounded-lg bg-muted" />
             ) : genderData.every((d) => d.value === 0) ? (
-              <div className="flex h-75 items-center justify-center text-muted-foreground">
-                데이터가 없습니다.
+              <div className="flex h-70 items-center justify-center text-sm text-muted-foreground">
+                데이터가 없습니다
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={genderData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
+                    cy="45%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={4}
                     dataKey="value"
-                    label={(props) =>
-                      `${props.name ?? ""} ${((props.percent ?? 0) * 100).toFixed(0)}%`
-                    }
+                    strokeWidth={0}
+                    label={({ name, percent, x, y }) => (
+                      <text
+                        x={x}
+                        y={y}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fontSize={12}
+                        fill="var(--color-foreground)"
+                      >
+                        {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                      </text>
+                    )}
+                    labelLine={{ stroke: "var(--color-muted-foreground)", strokeWidth: 1 }}
                   >
                     {genderData.map((_, index) => (
                       <Cell
@@ -271,41 +330,27 @@ export default function DashboardPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "var(--radius)",
-                      color: "hsl(var(--card-foreground))",
+                      backgroundColor: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontSize: "13px",
+                      color: "var(--color-foreground)",
                     }}
+                    itemStyle={{ color: "var(--color-foreground)" }}
+                    labelStyle={{ color: "var(--color-foreground)" }}
                   />
-                  <Legend />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: "13px", color: "var(--color-foreground)" }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
       </div>
-
-      {/* 서버 상태 */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">서버 상태</CardTitle>
-          <Server className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={
-                stats.serverStatus === "정상" ? "default" : "destructive"
-              }
-            >
-              {stats.serverStatus}
-            </Badge>
-            <span className="text-sm text-muted-foreground">
-              API 서버 (healthfit.autocallup.com)
-            </span>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

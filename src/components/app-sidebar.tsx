@@ -9,7 +9,9 @@ import {
   KeyRound,
   Settings,
   LogOut,
+  User,
 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar,
   SidebarContent,
@@ -57,7 +59,7 @@ const menuItems = [
 export function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, profileImage } = useAuthStore();
 
   const handleLogout = () => {
     logout();
@@ -99,11 +101,21 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t p-4">
         {user && (
-          <div className="mb-2 text-sm">
-            <p className="font-medium">{user.name}</p>
-            <p className="text-xs text-muted-foreground">
-              {getPermissionLabel(user.permission)} · {user.organization}
-            </p>
+          <div className="mb-2 flex items-center gap-3">
+            <Avatar size="lg">
+              {profileImage ? (
+                <AvatarImage src={profileImage} alt={user.name} />
+              ) : null}
+              <AvatarFallback>
+                <User className="h-4 w-4" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0 text-sm">
+              <p className="font-medium truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {getPermissionLabel(user.permission)} · {user.organization}
+              </p>
+            </div>
           </div>
         )}
         <SidebarMenu>
