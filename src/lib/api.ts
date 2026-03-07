@@ -11,6 +11,7 @@ async function request<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   const res = await fetch(url, {
+    cache: "no-store",
     headers: {
       "Content-Type": "application/json",
       ...options?.headers,
