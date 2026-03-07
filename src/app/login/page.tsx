@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { managerMemberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,8 +49,12 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">HealthFit Administrator</CardTitle>
-          <p className="text-sm text-muted-foreground">관리자 로그인</p>
+          <div className="flex items-center justify-center gap-2">
+              <Image src="/icon.png" alt="HealthFIT 아이콘" width={32} height={32} />
+              <CardTitle className="text-2xl font-bold">건강예보</CardTitle>
+            </div>
+          <p className="text-sm text-muted-foreground">Healthfit Administrator</p>
+          <p className="text-sm text-muted-foreground">관리자 / 파트너사 로그인</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -78,7 +83,7 @@ export default function LoginPage() {
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full" style={{ backgroundColor: "#00ccff", color: "#000" }} disabled={loading}>
               {loading ? "로그인 중..." : "로그인"}
             </Button>
           </form>
