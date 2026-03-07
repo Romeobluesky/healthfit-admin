@@ -134,6 +134,24 @@ export const serviceCodeApi = {
     ),
 };
 
+// Clause API
+export const clauseApi = {
+  getAll: () => request<import("@/types").Clause[]>("/clause"),
+  getById: (idx: number) => request<import("@/types").Clause>(`/clause/${idx}`),
+  create: (data: Partial<import("@/types").Clause>) =>
+    request<import("@/types").SqlResult>("/clause", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (idx: number, data: Partial<import("@/types").Clause>) =>
+    request<import("@/types").SqlResult>(`/clause/${idx}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (idx: number) =>
+    request<import("@/types").SqlResult>(`/clause/${idx}`, { method: "DELETE" }),
+};
+
 // Server Status API
 export const serverApi = {
   getStatus: () => request<{ status: string }>("/server/status"),

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +10,9 @@ import {
   Handshake,
   KeyRound,
   Settings,
+  ChevronDown,
+  User,
+  FileText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -19,7 +23,15 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const menuItems = [
   {
@@ -42,15 +54,25 @@ const menuItems = [
     url: "/dashboard/service-codes",
     icon: KeyRound,
   },
+];
+
+const settingsSubItems = [
   {
-    title: "환경설정",
+    title: "내 정보",
     url: "/dashboard/settings",
-    icon: Settings,
+    icon: User,
+  },
+  {
+    title: "약관 관리",
+    url: "/dashboard/settings/clauses",
+    icon: FileText,
   },
 ];
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const isSettingsActive = pathname.startsWith("/dashboard/settings");
+  const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
 
   return (
     <Sidebar>
@@ -80,6 +102,43 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+
+              <Collapsible
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
+                asChild
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton isActive={isSettingsActive}>
+                      <Settings className="h-4 w-4" />
+                      <span>환경설정</span>
+                      <ChevronDown
+                        className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                          settingsOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {settingsSubItems.map((item) => {
+                        const isSubActive = pathname === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.url}>
+                            <SidebarMenuSubButton asChild isActive={isSubActive}>
+                              <Link href={item.url}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
