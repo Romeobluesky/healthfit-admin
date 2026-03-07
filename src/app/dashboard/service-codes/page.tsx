@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -11,28 +11,40 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, KeyRound } from "lucide-react";
-import { serviceCodeApi } from "@/lib/api";
+import { Search, KeyRound, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
+import { serviceCodeApi, managerMemberApi } from "@/lib/api";
 import type { ServiceCode } from "@/types";
 
 export default function ServiceCodesPage() {
   const [codes, setCodes] = useState<ServiceCode[]>([]);
+  const [managerMap, setManagerMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
-    async function fetchCodes() {
+    async function fetchData() {
       try {
-        const data = await serviceCodeApi.getAll();
-        setCodes(data);
+        const [codesData, managersData] = await Promise.all([
+          serviceCodeApi.getAll(),
+          managerMemberApi.getAll(),
+        ]);
+        setCodes(codesData);
+        const map: Record<string, string> = {};
+        managersData.forEach((m) => {
+          map[m.id] = m.name;
+        });
+        setManagerMap(map);
       } catch {
-        console.error("서비스코드 조회 실패");
+        console.error("데이터 조회 실패");
       } finally {
         setLoading(false);
       }
     }
-    fetchCodes();
+    fetchData();
   }, []);
 
   const filteredCodes = codes.filter(
@@ -40,6 +52,16 @@ export default function ServiceCodesPage() {
       c.serviceCodeFull?.includes(search) ||
       c.mb_id?.includes(search)
   );
+
+  const totalPages = Math.max(1, Math.ceil(filteredCodes.length / pageSize));
+  const paginatedCodes = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCodes.slice(start, start + pageSize);
+  }, [filteredCodes, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const getStatusInfo = (code: ServiceCode) => {
     if (code.deletedAt) return { label: "미활성", variant: "outline" as const };
@@ -81,7 +103,8 @@ export default function ServiceCodesPage() {
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="w-16 text-white">번호</TableHead>
                 <TableHead className="text-white">코드</TableHead>
-                <TableHead className="text-white">사용 회원</TableHead>
+                <TableHead className="text-white">파트너아이디</TableHead>
+                <TableHead className="text-white">파트너명</TableHead>
                 <TableHead className="text-white">상태</TableHead>
                 <TableHead className="text-white">생성일</TableHead>
               </TableRow>
@@ -89,27 +112,28 @@ export default function ServiceCodesPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : filteredCodes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     데이터가 없습니다.
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredCodes.map((code, index) => {
+                paginatedCodes.map((code, index) => {
                   const status = getStatusInfo(code);
                   return (
                     <TableRow key={code.idx}>
-                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                       <TableCell className="font-mono font-medium">
                         {code.serviceCodeFull ||
                           `${code.serviceCodeOne}-${code.serviceCodeTwo}-${code.serviceCodeThree}`}
                       </TableCell>
                       <TableCell>{code.mb_id || "-"}</TableCell>
+                      <TableCell>{code.mb_id ? (managerMap[code.mb_id] || "-") : "-"}</TableCell>
                       <TableCell>
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </TableCell>
@@ -120,8 +144,71 @@ export default function ServiceCodesPage() {
               )}
             </TableBody>
           </Table>
+
         </CardContent>
       </Card>
+
+      {filteredCodes.length > 0 && (
+        <div className="-mt-2 flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            총 {filteredCodes.length}건 중 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filteredCodes.length)}건
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {(() => {
+              const pageGroup = Math.floor((currentPage - 1) / 10);
+              const startPage = pageGroup * 10 + 1;
+              const endPage = Math.min(startPage + 9, totalPages);
+              return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map((page) => (
+                <Button
+                  key={page}
+                  variant={page === currentPage ? "default" : "outline"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </Button>
+              ));
+            })()}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
