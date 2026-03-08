@@ -63,7 +63,9 @@ export default function ServiceCodeCreatePage() {
           serviceCodeApi.getAll(),
         ]);
         setManagers(managersData.filter((m) => !m.deletedAt));
-        setExistingCodes(new Set(codesData.map((c) => c.serviceCodeFull)));
+        setExistingCodes(new Set(codesData.map((c) =>
+          c.serviceCodeFull || `${c.serviceCodeOne}-${c.serviceCodeTwo}-${c.serviceCodeThree}`
+        )));
       } catch {
         console.error("데이터 조회 실패");
       } finally {

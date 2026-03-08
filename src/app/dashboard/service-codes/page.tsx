@@ -47,11 +47,16 @@ export default function ServiceCodesPage() {
     fetchData();
   }, []);
 
-  const filteredCodes = codes.filter(
-    (c) =>
-      c.serviceCodeFull?.includes(search) ||
+  const getCodeFull = (c: ServiceCode) =>
+    c.serviceCodeFull || `${c.serviceCodeOne}-${c.serviceCodeTwo}-${c.serviceCodeThree}`;
+
+  const filteredCodes = codes.filter((c) => {
+    if (!search) return true;
+    return (
+      getCodeFull(c).includes(search) ||
       c.mb_id?.includes(search)
-  );
+    );
+  });
 
   const totalPages = Math.max(1, Math.ceil(filteredCodes.length / pageSize));
   const paginatedCodes = useMemo(() => {
