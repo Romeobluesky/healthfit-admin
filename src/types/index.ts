@@ -75,6 +75,7 @@ export interface Member {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+  HealthExaminationHistory: string | null;
 }
 
 // 건강검진

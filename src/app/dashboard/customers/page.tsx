@@ -57,9 +57,9 @@ export default function CustomersPage() {
       m.birthDate?.includes(search)
   );
 
-  // 간편인증: socialLogin이 있는 회원, 일반: socialLogin이 없는 회원
-  const simpleAuthMembers = filteredMembers.filter((m) => m.socialLogin);
-  const generalMembers = filteredMembers.filter((m) => !m.socialLogin);
+  // 건강검진고객: HealthExaminationHistory === "Y", 일반고객: 그 외
+  const healthCheckMembers = filteredMembers.filter((m) => m.HealthExaminationHistory === "Y");
+  const generalMembers = filteredMembers.filter((m) => m.HealthExaminationHistory !== "Y");
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
@@ -161,7 +161,7 @@ export default function CustomersPage() {
       <Tabs defaultValue="simple-auth">
         <TabsList>
           <TabsTrigger value="simple-auth">
-            간편인증고객 ({simpleAuthMembers.length})
+            건강검진고객 ({healthCheckMembers.length})
           </TabsTrigger>
           <TabsTrigger value="general">
             일반고객 ({generalMembers.length})
@@ -170,10 +170,10 @@ export default function CustomersPage() {
         <TabsContent value="simple-auth">
           <Card>
             <CardHeader>
-              <CardTitle>간편인증고객 리스트</CardTitle>
+              <CardTitle>건강검진고객 리스트</CardTitle>
             </CardHeader>
             <CardContent>
-              <MemberTable data={simpleAuthMembers} type="simple" />
+              <MemberTable data={healthCheckMembers} type="simple" />
             </CardContent>
           </Card>
         </TabsContent>
