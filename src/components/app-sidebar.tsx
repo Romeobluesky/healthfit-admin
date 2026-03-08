@@ -13,6 +13,10 @@ import {
   ChevronDown,
   User,
   FileText,
+  HeartPulse,
+  UserRound,
+  List,
+  FilePlus2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -40,19 +44,35 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "고객관리",
-    url: "/dashboard/customers",
-    icon: Users,
-  },
-  {
     title: "파트너관리",
     url: "/dashboard/partners",
     icon: Handshake,
   },
+];
+
+const serviceCodeSubItems = [
   {
-    title: "서비스코드관리",
+    title: "서비스코드리스트",
     url: "/dashboard/service-codes",
-    icon: KeyRound,
+    icon: List,
+  },
+  {
+    title: "서비스코드생성",
+    url: "/dashboard/service-codes/create",
+    icon: FilePlus2,
+  },
+];
+
+const customerSubItems = [
+  {
+    title: "건강검진고객",
+    url: "/dashboard/customers",
+    icon: HeartPulse,
+  },
+  {
+    title: "일반고객",
+    url: "/dashboard/customers/general",
+    icon: UserRound,
   },
 ];
 
@@ -71,7 +91,11 @@ const settingsSubItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const isServiceCodesActive = pathname.startsWith("/dashboard/service-codes");
+  const isCustomersActive = pathname.startsWith("/dashboard/customers");
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
+  const [serviceCodesOpen, setServiceCodesOpen] = useState(isServiceCodesActive);
+  const [customersOpen, setCustomersOpen] = useState(isCustomersActive);
   const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
 
   return (
@@ -104,6 +128,80 @@ export function AppSidebar() {
               })}
 
               <Collapsible
+                open={serviceCodesOpen}
+                onOpenChange={setServiceCodesOpen}
+                asChild
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton isActive={isServiceCodesActive}>
+                      <KeyRound className="h-4 w-4" />
+                      <span>서비스코드관리</span>
+                      <ChevronDown
+                        className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                          serviceCodesOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {serviceCodeSubItems.map((item) => {
+                        const isSubActive = pathname === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.url}>
+                            <SidebarMenuSubButton asChild isActive={isSubActive} size="sm">
+                              <Link href={item.url}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              <Collapsible
+                open={customersOpen}
+                onOpenChange={setCustomersOpen}
+                asChild
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton isActive={isCustomersActive}>
+                      <Users className="h-4 w-4" />
+                      <span>고객관리</span>
+                      <ChevronDown
+                        className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                          customersOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {customerSubItems.map((item) => {
+                        const isSubActive = pathname === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.url}>
+                            <SidebarMenuSubButton asChild isActive={isSubActive} size="sm">
+                              <Link href={item.url}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              <Collapsible
                 open={settingsOpen}
                 onOpenChange={setSettingsOpen}
                 asChild
@@ -126,7 +224,7 @@ export function AppSidebar() {
                         const isSubActive = pathname === item.url;
                         return (
                           <SidebarMenuSubItem key={item.url}>
-                            <SidebarMenuSubButton asChild isActive={isSubActive}>
+                            <SidebarMenuSubButton asChild isActive={isSubActive} size="sm">
                               <Link href={item.url}>
                                 <item.icon className="h-4 w-4" />
                                 <span>{item.title}</span>

@@ -22,7 +22,7 @@ import type { Member, CheckUp } from "@/types";
 
 interface DashboardStats {
   memberCount: number;
-  checkUpCount: number;
+  healthCheckMemberCount: number;
   surveyCount: number;
   serviceCodeCount: number;
   serverStatus: string;
@@ -41,7 +41,7 @@ const PIE_COLORS = [CHART_COLORS.blue, CHART_COLORS.rose, CHART_COLORS.amber];
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     memberCount: 0,
-    checkUpCount: 0,
+    healthCheckMemberCount: 0,
     surveyCount: 0,
     serviceCodeCount: 0,
     serverStatus: "확인 중...",
@@ -73,9 +73,9 @@ export default function DashboardPage() {
 
         setStats({
           memberCount: memberList.length,
-          checkUpCount: checkUpList.length,
+          healthCheckMemberCount: memberList.filter((m) => m.HealthExaminationHistory === "Y").length,
           surveyCount:
-            surveys.status === "fulfilled" ? surveys.value.length : 0,
+            surveys.status === "fulfilled" ? surveys.value.filter((s) => !s.deletedAt).length : 0,
           serviceCodeCount:
             serviceCodes.status === "fulfilled"
               ? serviceCodes.value.length
@@ -141,7 +141,7 @@ export default function DashboardPage() {
     },
     {
       title: "건강검진고객",
-      value: stats.checkUpCount,
+      value: stats.healthCheckMemberCount,
       icon: FileCheck,
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-950/40",

@@ -19,7 +19,7 @@ import { useAuthStore } from "@/store/auth";
 import { isSuperAdmin } from "@/lib/permission";
 import type { Member } from "@/types";
 
-export default function CustomersPage() {
+export default function GeneralCustomersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -58,14 +58,14 @@ export default function CustomersPage() {
       m.birthDate?.includes(search)
   );
 
-  // 건강검진고객: HealthExaminationHistory === "Y"
-  const healthCheckMembers = filteredMembers.filter((m) => m.HealthExaminationHistory === "Y");
+  // 일반고객: HealthExaminationHistory !== "Y"
+  const generalMembers = filteredMembers.filter((m) => m.HealthExaminationHistory !== "Y");
 
-  const totalPages = Math.max(1, Math.ceil(healthCheckMembers.length / pageSize));
+  const totalPages = Math.max(1, Math.ceil(generalMembers.length / pageSize));
   const paginatedMembers = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return healthCheckMembers.slice(start, start + pageSize);
-  }, [healthCheckMembers, currentPage]);
+    return generalMembers.slice(start, start + pageSize);
+  }, [generalMembers, currentPage]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -82,7 +82,7 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold"><Users className="h-6 w-6" />고객관리</h1>
-        <p className="text-muted-foreground">간편인증 및 일반 고객 관리</p>
+        <p className="text-muted-foreground">일반 고객 관리</p>
       </div>
 
       <div className="flex items-center gap-2 max-w-sm">
@@ -96,7 +96,7 @@ export default function CustomersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>건강검진고객 리스트 ({healthCheckMembers.length})</CardTitle>
+          <CardTitle>일반고객 리스트 ({generalMembers.length})</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -108,7 +108,7 @@ export default function CustomersPage() {
                 <TableHead className="text-white">생년월일</TableHead>
                 <TableHead className="text-white">성별</TableHead>
                 <TableHead className="text-white">등록일</TableHead>
-                <TableHead className="w-24 text-white">리포트보기</TableHead>
+                <TableHead className="w-24 text-white">설문내역보기</TableHead>
                 {user && isSuperAdmin(user.permission) && (
                   <TableHead className="w-16 text-white">삭제</TableHead>
                 )}
@@ -121,7 +121,7 @@ export default function CustomersPage() {
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
-              ) : healthCheckMembers.length === 0 ? (
+              ) : generalMembers.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8">
                     데이터가 없습니다.
@@ -165,10 +165,10 @@ export default function CustomersPage() {
         </CardContent>
       </Card>
 
-      {healthCheckMembers.length > 0 && (
+      {generalMembers.length > 0 && (
         <div className="-mt-2 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            총 {healthCheckMembers.length}건 중 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, healthCheckMembers.length)}건
+            총 {generalMembers.length}건 중 {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, generalMembers.length)}건
           </p>
           <div className="flex items-center gap-1">
             <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>

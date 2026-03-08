@@ -128,6 +128,11 @@ export const serviceCodeApi = {
   getById: (idx: number) => request<import("@/types").ServiceCode>(`/serviceCode/${idx}`),
   getByCode: (one: string, two: string, three: string) =>
     request<import("@/types").ServiceCode>(`/serviceCode/code/${one}/${two}/${three}`),
+  create: (data: Partial<import("@/types").ServiceCode>) =>
+    request<import("@/types").SqlResult>("/serviceCode", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
   use: (memberIdx: number, one: string, two: string, three: string) =>
     request<import("@/types").SqlResult>(
       `/serviceCode/code/${memberIdx}/${one}/${two}/${three}`,
