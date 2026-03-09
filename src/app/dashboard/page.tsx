@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileCheck, ClipboardList, KeyRound, Server, TrendingUp, TrendingDown, LayoutDashboard } from "lucide-react";
+import { Users, FileCheck, ClipboardList, Laptop, Smartphone, LayoutDashboard } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -17,14 +17,15 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { memberApi, checkUpApi, serviceCodeApi, serverApi } from "@/lib/api";
+import { memberApi, checkUpApi, serverApi } from "@/lib/api";
 import type { Member, CheckUp } from "@/types";
 
 interface DashboardStats {
   memberCount: number;
   healthCheckMemberCount: number;
   generalMemberCount: number;
-  serviceCodeCount: number;
+  inflowWebCount: number;
+  inflowAppCount: number;
   serverStatus: string;
 }
 
@@ -43,7 +44,8 @@ export default function DashboardPage() {
     memberCount: 0,
     healthCheckMemberCount: 0,
     generalMemberCount: 0,
-    serviceCodeCount: 0,
+    inflowWebCount: 0,
+    inflowAppCount: 0,
     serverStatus: "확인 중...",
   });
   const [loading, setLoading] = useState(true);
@@ -57,11 +59,10 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [members, checkUps, serviceCodes, server] =
+        const [members, checkUps, server] =
           await Promise.allSettled([
             memberApi.getAll(),
             checkUpApi.getAll(),
-            serviceCodeApi.getAll(),
             serverApi.getStatus(),
           ]);
 
@@ -74,10 +75,8 @@ export default function DashboardPage() {
           memberCount: memberList.length,
           healthCheckMemberCount: memberList.filter((m) => m.HealthExaminationHistory === "Y").length,
           generalMemberCount: memberList.filter((m) => m.HealthExaminationHistory === "N").length,
-          serviceCodeCount:
-            serviceCodes.status === "fulfilled"
-              ? serviceCodes.value.length
-              : 0,
+          inflowWebCount: memberList.filter((m) => m.inflowPath === "web").length,
+          inflowAppCount: memberList.filter((m) => m.inflowPath !== "web").length,
           serverStatus:
             server.status === "fulfilled" ? "정상" : "연결 실패",
         });
@@ -154,12 +153,20 @@ export default function DashboardPage() {
       cardBg: "bg-violet-50/60 dark:bg-violet-950",
     },
     {
-      title: "서비스코드",
-      value: stats.serviceCodeCount,
-      icon: KeyRound,
+      title: "WEB 유입",
+      value: stats.inflowWebCount,
+      icon: Laptop,
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-950/40",
       cardBg: "bg-amber-50/60 dark:bg-orange-950",
+    },
+    {
+      title: "APP 유입",
+      value: stats.inflowAppCount,
+      icon: Smartphone,
+      color: "text-rose-600 dark:text-rose-400",
+      bg: "bg-rose-50 dark:bg-rose-950/40",
+      cardBg: "bg-rose-50/60 dark:bg-rose-950",
     },
   ];
 
@@ -195,23 +202,23 @@ export default function DashboardPage() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {summaryCards.map((card) => (
           <Card key={card.title} className={`border-0 shadow-sm ${card.cardBg}`}>
-            <CardContent className="p-5">
+            <CardContent className="p-5 py-3">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
+                <div className={`rounded-xl p-3.5 ${card.bg}`}>
+                  <card.icon className={`h-9 w-9 ${card.color}`} />
+                </div>
+                <div className="space-y-2 text-right">
                   <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
                   {loading ? (
-                    <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+                    <div className="h-8 w-16 animate-pulse rounded bg-muted ml-auto" />
                   ) : (
                     <p className="text-3xl font-bold tracking-tight">
                       {card.value.toLocaleString()}
                     </p>
                   )}
-                </div>
-                <div className={`rounded-xl p-3 ${card.bg}`}>
-                  <card.icon className={`h-5 w-5 ${card.color}`} />
                 </div>
               </div>
             </CardContent>
