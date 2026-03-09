@@ -115,7 +115,8 @@ export default function ClausesPage() {
       setMessage("저장되었습니다.");
       setEditingIdx(null);
       fetchClauses();
-    } catch {
+    } catch (err) {
+      console.error("약관 저장 실패:", err);
       setMessage("저장에 실패했습니다.");
     } finally {
       setSaving(false);
