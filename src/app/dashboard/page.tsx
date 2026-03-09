@@ -17,13 +17,13 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { memberApi, checkUpApi, surveyApi, serviceCodeApi, serverApi } from "@/lib/api";
+import { memberApi, checkUpApi, serviceCodeApi, serverApi } from "@/lib/api";
 import type { Member, CheckUp } from "@/types";
 
 interface DashboardStats {
   memberCount: number;
   healthCheckMemberCount: number;
-  surveyCount: number;
+  generalMemberCount: number;
   serviceCodeCount: number;
   serverStatus: string;
 }
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
     memberCount: 0,
     healthCheckMemberCount: 0,
-    surveyCount: 0,
+    generalMemberCount: 0,
     serviceCodeCount: 0,
     serverStatus: "확인 중...",
   });
@@ -57,11 +57,10 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [members, checkUps, surveys, serviceCodes, server] =
+        const [members, checkUps, serviceCodes, server] =
           await Promise.allSettled([
             memberApi.getAll(),
             checkUpApi.getAll(),
-            surveyApi.getAll(),
             serviceCodeApi.getAll(),
             serverApi.getStatus(),
           ]);
@@ -74,8 +73,7 @@ export default function DashboardPage() {
         setStats({
           memberCount: memberList.length,
           healthCheckMemberCount: memberList.filter((m) => m.HealthExaminationHistory === "Y").length,
-          surveyCount:
-            surveys.status === "fulfilled" ? surveys.value.filter((s) => !s.deletedAt).length : 0,
+          generalMemberCount: memberList.filter((m) => m.HealthExaminationHistory === "N").length,
           serviceCodeCount:
             serviceCodes.status === "fulfilled"
               ? serviceCodes.value.length
@@ -149,7 +147,7 @@ export default function DashboardPage() {
     },
     {
       title: "일반설문조사고객",
-      value: stats.surveyCount,
+      value: stats.generalMemberCount,
       icon: ClipboardList,
       color: "text-violet-600 dark:text-violet-400",
       bg: "bg-violet-50 dark:bg-violet-950/40",
