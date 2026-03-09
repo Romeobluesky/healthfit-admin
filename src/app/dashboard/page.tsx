@@ -145,39 +145,39 @@ export default function DashboardPage() {
       icon: Users,
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-950/40",
-      cardBg: "bg-blue-50/60 dark:bg-blue-950",
+      cardBg: "bg-blue-50 dark:bg-blue-500/40",
     },
     {
       title: "건강검진고객",
       value: stats.healthCheckMemberCount,
       icon: FileCheck,
       color: "text-emerald-600 dark:text-emerald-400",
-      bg: "bg-emerald-50 dark:bg-emerald-950/40",
-      cardBg: "bg-emerald-50/60 dark:bg-emerald-950",
+      bg: "bg-emerald-50 dark:bg-emerald-500/40",
+      cardBg: "bg-emerald-50 dark:bg-emerald-500/40",
     },
     {
-      title: "일반설문조사고객",
+      title: "일반고객",
       value: stats.generalMemberCount,
       icon: ClipboardList,
       color: "text-violet-600 dark:text-violet-400",
-      bg: "bg-violet-50 dark:bg-violet-950/40",
-      cardBg: "bg-violet-50/60 dark:bg-violet-950",
+      bg: "bg-violet-50 dark:bg-violet-500/40",
+      cardBg: "bg-violet-50 dark:bg-violet-500/40",
     },
     {
       title: "WEB 유입",
       value: stats.inflowWebCount,
       icon: Laptop,
-      color: "text-amber-600 dark:text-amber-400",
-      bg: "bg-amber-50 dark:bg-amber-950/40",
-      cardBg: "bg-amber-50/60 dark:bg-orange-950",
+      color: "text-orange-600 dark:text-orange-400",
+      bg: "bg-orange-50 dark:bg-orange-500/40",
+      cardBg: "bg-orange-50 dark:bg-orange-500/60",
     },
     {
       title: "APP 유입",
       value: stats.inflowAppCount,
       icon: Smartphone,
       color: "text-rose-600 dark:text-rose-400",
-      bg: "bg-rose-50 dark:bg-rose-950/40",
-      cardBg: "bg-rose-50/60 dark:bg-rose-950",
+      bg: "bg-rose-50 dark:bg-rose-500/40",
+      cardBg: "bg-rose-50 dark:bg-rose-500/40",
     },
   ];
 
@@ -186,7 +186,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><LayoutDashboard className="h-6 w-6" />대시보드</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          HealthFit 서비스 현황을 한눈에 확인하세요
+          건강예뵈:HealthFit 서비스 현황을 한눈에 확인하세요
         </p>
       </div>
 
@@ -240,7 +240,7 @@ export default function DashboardPage() {
       {/* 그래프 영역 */}
       <div className="grid gap-4 lg:grid-cols-7">
         {/* 월별 등록 현황 바 차트 */}
-        <Card className="lg:col-span-4 border-0 shadow-sm bg-sky-50/50 dark:bg-sky-950/15">
+        <Card className="lg:col-span-4 border-0 shadow-sm bg-sky-50/50 dark:bg-sky-500/40">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">
               월별 등록 현황
@@ -299,7 +299,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* 성별 분포 파이 차트 */}
-        <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-950/50">
+        <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-500/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base font-medium">나이대 분포</CardTitle>
             <p className="text-xs text-muted-foreground">전체 회원 나이대별 비율</p>
