@@ -37,7 +37,7 @@ const CHART_COLORS = {
   rose: "#f43f5e",
 };
 
-const PIE_COLORS = [CHART_COLORS.blue, CHART_COLORS.rose, CHART_COLORS.amber];
+const PIE_COLORS = [CHART_COLORS.blue, CHART_COLORS.emerald, CHART_COLORS.violet, CHART_COLORS.amber, CHART_COLORS.rose, "#6366f1"];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats>({
@@ -52,7 +52,7 @@ export default function DashboardPage() {
   const [monthlyData, setMonthlyData] = useState<
     { month: string; members: number; checkUps: number }[]
   >([]);
-  const [genderData, setGenderData] = useState<
+  const [ageData, setAgeData] = useState<
     { name: string; value: number }[]
   >([]);
 
@@ -82,7 +82,7 @@ export default function DashboardPage() {
         });
 
         buildMonthlyChart(memberList, checkUpList);
-        buildGenderChart(memberList);
+        buildAgeChart(memberList);
       } catch {
         setStats((prev) => ({ ...prev, serverStatus: "오류" }));
       } finally {
@@ -114,17 +114,28 @@ export default function DashboardPage() {
     setMonthlyData(months);
   }
 
-  function buildGenderChart(memberList: Member[]) {
-    const male = memberList.filter((m) => m.gender === 1).length;
-    const female = memberList.filter((m) => m.gender === 2).length;
-    const unknown = memberList.length - male - female;
+  function buildAgeChart(memberList: Member[]) {
+    const now = new Date();
+    const groups: Record<string, number> = {
+      "10대": 0, "20대": 0, "30대": 0, "40대": 0, "50대": 0, "60대 이상": 0,
+    };
 
-    const data = [
-      { name: "남성", value: male },
-      { name: "여성", value: female },
-    ];
-    if (unknown > 0) data.push({ name: "미지정", value: unknown });
-    setGenderData(data);
+    memberList.forEach((m) => {
+      if (!m.birthDate) return;
+      const birth = new Date(m.birthDate);
+      const age = now.getFullYear() - birth.getFullYear();
+      if (age < 20) groups["10대"]++;
+      else if (age < 30) groups["20대"]++;
+      else if (age < 40) groups["30대"]++;
+      else if (age < 50) groups["40대"]++;
+      else if (age < 60) groups["50대"]++;
+      else groups["60대 이상"]++;
+    });
+
+    const data = Object.entries(groups)
+      .filter(([, value]) => value > 0)
+      .map(([name, value]) => ({ name, value }));
+    setAgeData(data);
   }
 
   const summaryCards = [
@@ -290,13 +301,13 @@ export default function DashboardPage() {
         {/* 성별 분포 파이 차트 */}
         <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-950/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">성별 분포</CardTitle>
-            <p className="text-xs text-muted-foreground">전체 회원 성별 비율</p>
+            <CardTitle className="text-base font-medium">나이대 분포</CardTitle>
+            <p className="text-xs text-muted-foreground">전체 회원 나이대별 비율</p>
           </CardHeader>
           <CardContent className="pt-2">
             {loading ? (
               <div className="h-70 animate-pulse rounded-lg bg-muted" />
-            ) : genderData.every((d) => d.value === 0) ? (
+            ) : ageData.every((d) => d.value === 0) ? (
               <div className="flex h-70 items-center justify-center text-sm text-muted-foreground">
                 데이터가 없습니다
               </div>
@@ -304,7 +315,7 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
-                    data={genderData}
+                    data={ageData}
                     cx="50%"
                     cy="45%"
                     innerRadius={50}
@@ -312,21 +323,29 @@ export default function DashboardPage() {
                     paddingAngle={4}
                     dataKey="value"
                     strokeWidth={0}
-                    label={({ name, percent, x, y }) => (
-                      <text
-                        x={x}
-                        y={y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fontSize={12}
-                        fill="var(--color-foreground)"
-                      >
-                        {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                      </text>
-                    )}
+                    label={({ name, percent, x, y, cx: centerX, cy: centerY }) => {
+                      const dx = x - centerX;
+                      const dy = y - centerY;
+                      const dist = Math.sqrt(dx * dx + dy * dy);
+                      const offset = 18;
+                      const nx = x + (dx / dist) * offset;
+                      const ny = y + (dy / dist) * offset;
+                      return (
+                        <text
+                          x={nx}
+                          y={ny}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fontSize={12}
+                          fill="var(--color-foreground)"
+                        >
+                          {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                        </text>
+                      );
+                    }}
                     labelLine={{ stroke: "var(--color-muted-foreground)", strokeWidth: 1 }}
                   >
-                    {genderData.map((_, index) => (
+                    {ageData.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
                         fill={PIE_COLORS[index % PIE_COLORS.length]}
