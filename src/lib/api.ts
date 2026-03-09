@@ -162,3 +162,33 @@ export const clauseApi = {
 export const serverApi = {
   getStatus: () => request<{ status: string }>("/server/status"),
 };
+
+// DiseaseDescription API
+export const diseaseDescriptionApi = {
+  getAll: () => request<import("@/types").DiseaseDescription[]>("/diseaseDescription"),
+  getByTitle: (title: string) =>
+    request<import("@/types").DiseaseDescription>(`/diseaseDescription/title/${encodeURIComponent(title)}`),
+};
+
+// CancerDescription API
+export const cancerDescriptionApi = {
+  getAll: () => request<import("@/types").CancerDescription[]>("/cancerDescription"),
+  getByTitle: (title: string) =>
+    request<import("@/types").CancerDescription>(`/cancerDescription/title/${encodeURIComponent(title)}`),
+};
+
+// CancerIncidence API
+export const cancerIncidenceApi = {
+  getAll: () => request<import("@/types").CancerIncidence[]>("/cancerIncidence"),
+  getByTitle: (title: string) =>
+    request<import("@/types").CancerIncidence>(`/cancerIncidence/title/${encodeURIComponent(title)}`),
+};
+
+// CancerIncidenceRate API
+export const cancerIncidenceRateApi = {
+  getAll: () => request<import("@/types").CancerIncidenceRate[]>("/cancerIncidenceRate"),
+  getByTitle: (title: string) =>
+    request<import("@/types").CancerIncidenceRate>(`/cancerIncidenceRate/title/${encodeURIComponent(title)}`),
+  getByGender: (gender: number) =>
+    request<import("@/types").CancerIncidenceRate[]>(`/cancerIncidenceRate/gender/${gender}`),
+};

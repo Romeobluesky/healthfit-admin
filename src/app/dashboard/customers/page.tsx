@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
+import Link from "next/link";
 import { memberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isSuperAdmin } from "@/lib/permission";
@@ -141,8 +142,10 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" disabled>
-                        <FileText className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href={`/dashboard/customers/${member.idx}/report`}>
+                          <FileText className="h-4 w-4" />
+                        </Link>
                       </Button>
                     </TableCell>
                     {user && isSuperAdmin(user.permission) && (

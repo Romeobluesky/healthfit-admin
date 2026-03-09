@@ -124,3 +124,63 @@
     font-family: var(--font-noto-sans-kr), sans-serif;
   }
 }
+
+/* ===== 건강분석 리포트 스타일 ===== */
+* {
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+}
+
+.report-container {
+  background-color: #e5e7eb;
+  padding: 20px 0;
+}
+
+.report-container > div {
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== 인쇄 스타일 ===== */
+@media print {
+  /* 대시보드 UI 숨김 */
+  [data-sidebar],
+  header,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    font: 12pt "Malgun Gothic", sans-serif;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .report-container {
+    background-color: #fff;
+    padding: 0;
+  }
+
+  .report-container > div {
+    margin-bottom: 0;
+    box-shadow: none;
+    page-break-after: always;
+  }
+
+  .report-container > div:last-child {
+    page-break-after: auto;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}

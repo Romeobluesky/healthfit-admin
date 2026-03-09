@@ -224,3 +224,54 @@ export interface Notice {
   updatedAt: string;
   deletedAt: string | null;
 }
+
+// 질병 설명
+export interface DiseaseDescription {
+  idx: number;
+  title: string;
+  description: string;
+  factor: string;
+  symptom: string;
+  prevention: string;
+}
+
+// 암 질병 설명
+export interface CancerDescription {
+  idx: number;
+  title: string;
+  description: string;
+  factor: string;
+  symptom: string;
+  prevention: string;
+}
+
+// 암 발생자 수 (연령대별)
+export interface CancerIncidence {
+  idx: number;
+  title: string;
+  total: number;
+  teenager: number;
+  twenties: number;
+  thirties: number;
+  forties: number;
+  fifties: number;
+  sixties: number;
+  seventies: number;
+  eighties: number;
+}
+
+// 암 발생률 (성별별)
+export interface CancerIncidenceRate {
+  idx: number;
+  title: string;
+  gender: Gender;
+  total: number;
+  teenager: number;
+  twenties: number;
+  thirties: number;
+  forties: number;
+  fifties: number;
+  sixties: number;
+  seventies: number;
+  eighties: number;
+}
