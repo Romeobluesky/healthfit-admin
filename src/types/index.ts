@@ -76,6 +76,7 @@ export interface Member {
   updatedAt: string;
   deletedAt: string | null;
   HealthExaminationHistory: string | null;
+  inflowPath: string | null;
 }
 
 // 건강검진

@@ -13,16 +13,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
+import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download } from "lucide-react";
 import { memberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isSuperAdmin } from "@/lib/permission";
 import type { Member } from "@/types";
+import * as XLSX from "xlsx";
 
 export default function GeneralCustomersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
   const user = useAuthStore((s) => s.user);
@@ -31,7 +34,7 @@ export default function GeneralCustomersPage() {
     async function fetchMembers() {
       try {
         const data = await memberApi.getAll();
-        setMembers(data);
+        setMembers(data.sort((a: Member, b: Member) => b.idx - a.idx));
       } catch {
         console.error("회원 목록 조회 실패");
       } finally {
@@ -51,12 +54,27 @@ export default function GeneralCustomersPage() {
     }
   };
 
-  const filteredMembers = members.filter(
-    (m) =>
+  const filteredMembers = members.filter((m) => {
+    const matchesSearch =
       m.name?.includes(search) ||
       m.phone?.includes(search) ||
-      m.birthDate?.includes(search)
-  );
+      m.birthDate?.includes(search);
+
+    let matchesDate = true;
+    if (startDate || endDate) {
+      const created = new Date(m.createdAt);
+      if (startDate) {
+        matchesDate = matchesDate && created >= new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        matchesDate = matchesDate && created <= end;
+      }
+    }
+
+    return matchesSearch && matchesDate;
+  });
 
   // 일반고객: HealthExaminationHistory !== "Y"
   const generalMembers = filteredMembers.filter((m) => m.HealthExaminationHistory !== "Y");
@@ -69,13 +87,42 @@ export default function GeneralCustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, startDate, endDate]);
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
+  const formatPhone = (phone: string) => {
+    if (!phone) return "-";
+    return phone.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("ko-KR");
+    const d = new Date(dateStr);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const handleExcelDownload = () => {
+    const excelData = generalMembers.map((member, index) => ({
+      번호: index + 1,
+      이름: member.name,
+      전화번호: formatPhone(member.phone),
+      생년월일: member.birthDate || "-",
+      성별: member.gender ? formatGender(member.gender) : "-",
+      유입경로: member.inflowPath === "web" ? "WEB" : "APP",
+      등록일: formatDate(member.createdAt),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "일반고객");
+    const dateRange = startDate || endDate
+      ? `_${startDate || "시작"}~${endDate || "현재"}`
+      : "";
+    XLSX.writeFile(wb, `일반고객${dateRange}.xlsx`);
   };
 
   return (
@@ -85,13 +132,34 @@ export default function GeneralCustomersPage() {
         <p className="text-muted-foreground">일반 고객 관리</p>
       </div>
 
-      <div className="flex items-center gap-2 max-w-sm">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="이름, 전화번호, 생년월일 검색..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2 max-w-sm">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="이름, 전화번호, 생년월일 검색..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="w-40"
+          />
+          <span className="text-muted-foreground">~</span>
+          <Input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="w-40"
+          />
+        </div>
+        <Button variant="outline" onClick={handleExcelDownload} disabled={generalMembers.length === 0}>
+          <Download className="h-4 w-4 mr-2" />
+          엑셀 다운로드
+        </Button>
       </div>
 
       <Card>
@@ -107,6 +175,7 @@ export default function GeneralCustomersPage() {
                 <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">생년월일</TableHead>
                 <TableHead className="text-white">성별</TableHead>
+                <TableHead className="text-white">유입경로</TableHead>
                 <TableHead className="text-white">등록일</TableHead>
                 <TableHead className="w-24 text-white">설문내역보기</TableHead>
                 {user && isSuperAdmin(user.permission) && (
@@ -132,12 +201,22 @@ export default function GeneralCustomersPage() {
                   <TableRow key={member.idx}>
                     <TableCell>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
-                    <TableCell>{member.phone}</TableCell>
+                    <TableCell>{formatPhone(member.phone)}</TableCell>
                     <TableCell>{member.birthDate || "-"}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
                         {member.gender ? formatGender(member.gender) : "-"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span
+                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                        style={{
+                          backgroundColor: member.inflowPath === "web" ? "#6C74E2" : "#9E4E93",
+                        }}
+                      >
+                        {member.inflowPath === "web" ? "WEB" : "APP"}
+                      </span>
                     </TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell>
