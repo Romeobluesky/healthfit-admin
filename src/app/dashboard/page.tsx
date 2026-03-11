@@ -312,7 +312,7 @@ export default function DashboardPage() {
                 데이터가 없습니다
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
+              <ResponsiveContainer width="100%" height={290}>
                 <PieChart>
                   <Pie
                     data={ageData}
