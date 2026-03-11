@@ -105,9 +105,11 @@ export default function DashboardPage() {
       const memberCount = memberList.filter((m) =>
         m.createdAt?.startsWith(yearMonth)
       ).length;
-      const checkUpCount = checkUpList.filter((c) =>
-        c.createdAt?.startsWith(yearMonth)
-      ).length;
+      const checkUpCount = new Set(
+        checkUpList
+          .filter((c) => c.createdAt?.startsWith(yearMonth))
+          .map((c) => c.memberIdx)
+      ).size;
 
       months.push({ month: label, members: memberCount, checkUps: checkUpCount });
     }
