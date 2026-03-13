@@ -12,7 +12,8 @@
       "Bash(python -c \"import pymupdf; doc = pymupdf.open\\(''c:/Users/JINCERO/Desktop/Dev/healthfit-admin/.docs/pdf_print/romeosky_20260309_romeosky_analysis.pdf''\\); print\\(len\\(doc\\)\\); [doc[i].get_pixmap\\(dpi=150\\).save\\(''c:/Users/JINCERO/Desktop/Dev/healthfit-admin/.docs/pdf_print/page_%d.png'' % \\(i+1\\)\\) or print\\(''Page %d'' % \\(i+1\\)\\) for i in range\\(min\\(10, len\\(doc\\)\\)\\)]; doc.close\\(\\)\")",
       "Bash(python -c \"import pymupdf; doc = pymupdf.open\\(''c:/Users/JINCERO/Desktop/Dev/healthfit-admin/.docs/pdf_print/romeosky_20260309_romeosky_analysis.pdf''\\); [doc[i].get_pixmap\\(dpi=150\\).save\\(''c:/Users/JINCERO/Desktop/Dev/healthfit-admin/.docs/pdf_print/page_%d.png'' % \\(i+1\\)\\) or 0 for i in range\\(10, len\\(doc\\)\\)]; print\\(''done'', len\\(doc\\)\\)\")",
       "Bash(python -c \":*)",
-      "Bash(npm install xlsx)"
+      "Bash(npm install xlsx)",
+      "Bash(grep -E \"\\\\.\\(json|config|md\\)$|^d\")"
     ]
   }
 }
