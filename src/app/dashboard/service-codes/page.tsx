@@ -13,15 +13,25 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, KeyRound, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Search, KeyRound, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download } from "lucide-react";
 import { serviceCodeApi, managerMemberApi } from "@/lib/api";
-import type { ServiceCode } from "@/types";
+import type { ServiceCode, ManagerMember } from "@/types";
+import * as XLSX from "xlsx";
 
 export default function ServiceCodesPage() {
   const [codes, setCodes] = useState<ServiceCode[]>([]);
+  const [managers, setManagers] = useState<ManagerMember[]>([]);
   const [managerMap, setManagerMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedPartnerId, setSelectedPartnerId] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -33,6 +43,7 @@ export default function ServiceCodesPage() {
           managerMemberApi.getAll(),
         ]);
         setCodes(codesData);
+        setManagers(managersData.filter((m) => !m.deletedAt));
         const map: Record<string, string> = {};
         managersData.forEach((m) => {
           map[m.id] = m.name;
@@ -51,6 +62,7 @@ export default function ServiceCodesPage() {
     c.serviceCodeFull || `${c.serviceCodeOne}-${c.serviceCodeTwo}-${c.serviceCodeThree}`;
 
   const filteredCodes = codes.filter((c) => {
+    if (selectedPartnerId !== "all" && c.mb_id !== selectedPartnerId) return false;
     if (!search) return true;
     return (
       getCodeFull(c).includes(search) ||
@@ -66,7 +78,25 @@ export default function ServiceCodesPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search]);
+  }, [search, selectedPartnerId]);
+
+  const handleExcelDownload = () => {
+    const today = formatDate(new Date().toISOString());
+    const rows = filteredCodes.map((code) => ({
+      "코드": getCodeFull(code),
+      "아이디": code.mb_id || "-",
+      "파트너명": code.mb_id ? (managerMap[code.mb_id] || "-") : "-",
+      "상태": getStatusInfo(code).label,
+      "등록일": today,
+    }));
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "서비스코드");
+    const partnerName = selectedPartnerId !== "all"
+      ? `_${managerMap[selectedPartnerId] || selectedPartnerId}`
+      : "";
+    XLSX.writeFile(wb, `서비스코드${partnerName}_${today}.xlsx`);
+  };
 
   const getStatusInfo = (code: ServiceCode) => {
     if (code.deletedAt) return { label: "미활성", bg: "bg-gray-400 text-white" };
@@ -93,13 +123,35 @@ export default function ServiceCodesPage() {
         <p className="text-muted-foreground">서비스코드 발급 및 관리</p>
       </div>
 
-      <div className="flex items-center gap-2 max-w-sm">
+      <div className="flex items-center gap-2">
         <Search className="h-4 w-4 text-muted-foreground" />
         <Input
+          className="max-w-50"
           placeholder="코드, 회원 ID 검색..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
+          <SelectTrigger className="w-50">
+            <SelectValue placeholder="파트너 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체 파트너</SelectItem>
+            {managers.map((m) => (
+              <SelectItem key={m.idx} value={m.id}>
+                {m.name} ({m.id})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          variant="outline"
+          onClick={handleExcelDownload}
+          disabled={filteredCodes.length === 0}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          엑셀 다운로드
+        </Button>
       </div>
 
       <Card>
