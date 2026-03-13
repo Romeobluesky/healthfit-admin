@@ -69,17 +69,21 @@ export default function ServiceCodesPage() {
   }, [search]);
 
   const getStatusInfo = (code: ServiceCode) => {
-    if (code.deletedAt) return { label: "미활성", variant: "outline" as const };
+    if (code.deletedAt) return { label: "미활성", bg: "bg-gray-400 text-white" };
     if (code.mb_id && code.service_check === "Y")
-      return { label: "사용중", variant: "default" as const };
+      return { label: "사용중", bg: "bg-blue-500 text-white" };
     if (code.service_check === "Y")
-      return { label: "활성", variant: "secondary" as const };
-    return { label: "미사용", variant: "outline" as const };
+      return { label: "활성", bg: "bg-green-500 text-white" };
+    return { label: "미사용", bg: "bg-orange-400 text-white" };
   };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("ko-KR");
+    const d = new Date(dateStr);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
   };
 
   return (
@@ -140,7 +144,7 @@ export default function ServiceCodesPage() {
                       <TableCell>{code.mb_id || "-"}</TableCell>
                       <TableCell>{code.mb_id ? (managerMap[code.mb_id] || "-") : "-"}</TableCell>
                       <TableCell>
-                        <Badge variant={status.variant}>{status.label}</Badge>
+                        <Badge className={`w-15 justify-center ${status.bg}`}>{status.label}</Badge>
                       </TableCell>
                       <TableCell>{formatDate(code.createdAt)}</TableCell>
                     </TableRow>

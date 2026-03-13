@@ -133,6 +133,16 @@ export const serviceCodeApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
+  update: (idx: number, data: Partial<import("@/types").ServiceCode>) =>
+    request<import("@/types").SqlResult>(`/serviceCode/${idx}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  assignPartner: (mb_id: string, count: number) =>
+    request<import("@/types").SqlResult>("/serviceCode/assign", {
+      method: "PUT",
+      body: JSON.stringify({ mb_id, count }),
+    }),
   use: (memberIdx: number, one: string, two: string, three: string) =>
     request<import("@/types").SqlResult>(
       `/serviceCode/code/${memberIdx}/${one}/${two}/${three}`,

@@ -17,6 +17,7 @@ import {
   UserRound,
   List,
   FilePlus2,
+  UserPlus,
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +56,11 @@ const serviceCodeSubItems = [
     title: "서비스코드생성",
     url: "/dashboard/service-codes/create",
     icon: FilePlus2,
+  },
+  {
+    title: "서비스코드파트너지정",
+    url: "/dashboard/service-codes/assign",
+    icon: UserPlus,
   },
 ];
 
