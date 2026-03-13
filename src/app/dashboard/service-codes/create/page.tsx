@@ -53,6 +53,7 @@ export default function ServiceCodeCreatePage() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -87,12 +88,8 @@ export default function ServiceCodeCreatePage() {
   };
 
   const handleGenerate = () => {
-    if (!selectedManagerId) {
-      setMessage("파트너를 선택해주세요.");
-      return;
-    }
-    if (codeCount < 1 || codeCount > 100) {
-      setMessage("생성 갯수는 1~100 사이로 입력해주세요.");
+    if (codeCount < 1 || codeCount > 10000) {
+      setMessage("생성 갯수는 1~10000 사이로 입력해주세요.");
       return;
     }
     setGenerating(true);
@@ -122,25 +119,23 @@ export default function ServiceCodeCreatePage() {
       setMessage("생성된 코드가 없습니다.");
       return;
     }
-    if (!selectedManagerId) {
-      setMessage("파트너를 선택해주세요.");
-      return;
-    }
-
     setSaving(true);
+    setSaveProgress(0);
     setMessage("");
     let successCount = 0;
     let duplicateCount = 0;
+    const total = generatedCodes.length;
     const savedCodes: GeneratedCode[] = [];
     try {
-      for (const code of generatedCodes) {
+      for (let i = 0; i < generatedCodes.length; i++) {
+        const code = generatedCodes[i];
         try {
           await serviceCodeApi.create({
             serviceCodeOne: code.serviceCodeOne,
             serviceCodeTwo: code.serviceCodeTwo,
             serviceCodeThree: code.serviceCodeThree,
             service_check: "N",
-            mb_id: selectedManagerId,
+            ...(selectedManagerId && selectedManagerId !== "none" ? { mb_id: selectedManagerId } : {}),
           });
           successCount++;
           savedCodes.push(code);
@@ -151,6 +146,7 @@ export default function ServiceCodeCreatePage() {
             throw err;
           }
         }
+        setSaveProgress(Math.round(((i + 1) / total) * 100));
       }
       setExistingCodes((prev) => {
         const next = new Set(prev);
@@ -167,6 +163,7 @@ export default function ServiceCodeCreatePage() {
       setMessage(`${successCount}개 저장 완료. 일부 코드 저장 중 오류가 발생했습니다.`);
     } finally {
       setSaving(false);
+      setSaveProgress(0);
     }
   };
 
@@ -199,6 +196,7 @@ export default function ServiceCodeCreatePage() {
                   <SelectValue placeholder="파트너를 선택하세요" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">미지정</SelectItem>
                   {managers.map((m) => (
                     <SelectItem key={m.idx} value={m.id}>
                       {m.name} ({m.id})
@@ -212,7 +210,7 @@ export default function ServiceCodeCreatePage() {
               <Input
                 type="number"
                 min={1}
-                max={100}
+                max={10000}
                 value={codeCount}
                 onChange={(e) => setCodeCount(Number(e.target.value))}
                 placeholder="생성할 코드 갯수"
@@ -223,12 +221,36 @@ export default function ServiceCodeCreatePage() {
           <div className="flex gap-2">
             <Button
               onClick={handleGenerate}
-              disabled={generating}
+              disabled={generating || saving}
               className="bg-[#0BDFDF] hover:bg-[#09c5c5] text-black"
             >
               {generating ? "생성 중..." : "코드 생성"}
             </Button>
+            {generatedCodes.length > 0 && (
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-8"
+              >
+                {saving ? "저장 중..." : "저장"}
+              </Button>
+            )}
           </div>
+
+          {saving && (
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>저장 중...</span>
+                <span>{saveProgress}%</span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-gray-200">
+                <div
+                  className="h-full rounded-full bg-[#0BDFDF] transition-all duration-150"
+                  style={{ width: `${saveProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
 
           {message && (
             <p className="text-sm text-muted-foreground">{message}</p>
@@ -268,7 +290,7 @@ export default function ServiceCodeCreatePage() {
                           : "-"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">미사용</Badge>
+                        <Badge variant="outline">{selectedManagerId && selectedManagerId !== "none" ? "미사용" : "활성"}</Badge>
                       </TableCell>
                       <TableCell>
                         <Button
@@ -287,15 +309,6 @@ export default function ServiceCodeCreatePage() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end">
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-[#0BDFDF] hover:bg-[#09c5c5] text-white px-8"
-            >
-              {saving ? "저장 중..." : "저장"}
-            </Button>
-          </div>
         </>
       )}
     </div>
