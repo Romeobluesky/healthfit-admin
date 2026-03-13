@@ -80,7 +80,7 @@ export default function ServiceCodesPage() {
     setCurrentPage(1);
   }, [search, selectedPartnerId]);
 
-  const handleExcelDownload = () => {
+  const handleExcelDownload = async () => {
     const today = formatDate(new Date().toISOString());
     const rows = filteredCodes.map((code) => ({
       "코드": getCodeFull(code),
@@ -96,6 +96,14 @@ export default function ServiceCodesPage() {
       ? `_${managerMap[selectedPartnerId] || selectedPartnerId}`
       : "";
     XLSX.writeFile(wb, `서비스코드${partnerName}_${today}.xlsx`);
+
+    // 다운로드된 코드들의 updatedAt 업데이트
+    const idxList = filteredCodes.map((code) => code.idx);
+    try {
+      await serviceCodeApi.markDownloaded(idxList);
+    } catch {
+      console.error("다운로드 기록 업데이트 실패");
+    }
   };
 
   const getStatusInfo = (code: ServiceCode) => {

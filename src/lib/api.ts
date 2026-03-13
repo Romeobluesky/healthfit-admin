@@ -143,6 +143,11 @@ export const serviceCodeApi = {
       method: "PUT",
       body: JSON.stringify({ mb_id, count }),
     }),
+  markDownloaded: (idxList: number[]) =>
+    request<import("@/types").SqlResult>("/serviceCode/mark-downloaded", {
+      method: "PUT",
+      body: JSON.stringify({ idxList }),
+    }),
   use: (memberIdx: number, one: string, two: string, three: string) =>
     request<import("@/types").SqlResult>(
       `/serviceCode/code/${memberIdx}/${one}/${two}/${three}`,
