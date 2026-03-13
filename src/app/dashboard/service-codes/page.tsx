@@ -32,6 +32,7 @@ export default function ServiceCodesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedPartnerId, setSelectedPartnerId] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
@@ -61,8 +62,15 @@ export default function ServiceCodesPage() {
   const getCodeFull = (c: ServiceCode) =>
     c.serviceCodeFull || `${c.serviceCodeOne}-${c.serviceCodeTwo}-${c.serviceCodeThree}`;
 
+  const getStatusLabel = (c: ServiceCode) => {
+    if (c.mb_id && c.service_check === "Y") return "사용중";
+    if (c.mb_id && c.service_check === "N") return "미사용";
+    return "활성";
+  };
+
   const filteredCodes = codes.filter((c) => {
     if (selectedPartnerId !== "all" && c.mb_id !== selectedPartnerId) return false;
+    if (selectedStatus !== "all" && getStatusLabel(c) !== selectedStatus) return false;
     if (!search) return true;
     return (
       getCodeFull(c).includes(search) ||
@@ -78,7 +86,7 @@ export default function ServiceCodesPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedPartnerId]);
+  }, [search, selectedPartnerId, selectedStatus]);
 
   const handleExcelDownload = async () => {
     const today = formatDate(new Date().toISOString());
@@ -107,12 +115,11 @@ export default function ServiceCodesPage() {
   };
 
   const getStatusInfo = (code: ServiceCode) => {
-    if (code.deletedAt) return { label: "미활성", bg: "bg-gray-400 text-white" };
     if (code.mb_id && code.service_check === "Y")
       return { label: "사용중", bg: "bg-blue-500 text-white" };
-    if (code.service_check === "Y")
-      return { label: "활성", bg: "bg-green-500 text-white" };
-    return { label: "미사용", bg: "bg-orange-400 text-white" };
+    if (code.mb_id && code.service_check === "N")
+      return { label: "미사용", bg: "bg-orange-400 text-white" };
+    return { label: "활성", bg: "bg-green-500 text-white" };
   };
 
   const formatDate = (dateStr: string) => {
@@ -150,6 +157,17 @@ export default function ServiceCodesPage() {
                 {m.name} ({m.id})
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <SelectTrigger className="w-35">
+            <SelectValue placeholder="상태 선택" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체 상태</SelectItem>
+            <SelectItem value="활성">활성</SelectItem>
+            <SelectItem value="미사용">미사용</SelectItem>
+            <SelectItem value="사용중">사용중</SelectItem>
           </SelectContent>
         </Select>
         <Button
