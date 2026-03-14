@@ -1,5 +1,6 @@
 Noto Sans KR
-Evergreen #0BDFDF
-lris
-fuschia
-light slate
+#0BDFDF
+#D457D4
+#04C6F7
+#CCFFFF
+#1964dc
