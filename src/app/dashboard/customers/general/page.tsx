@@ -11,7 +11,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download } from "lucide-react";
 import { memberApi } from "@/lib/api";
@@ -207,9 +206,14 @@ export default function GeneralCustomersPage() {
                     <TableCell>{formatPhone(member.phone)}</TableCell>
                     <TableCell>{member.birthDate || "-"}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {member.gender ? formatGender(member.gender) : "-"}
-                      </Badge>
+                      {member.gender ? (
+                        <span
+                          className="inline-flex w-10 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                          style={{ backgroundColor: member.gender === 1 ? "#1964dc" : "#D457D4" }}
+                        >
+                          {formatGender(member.gender)}
+                        </span>
+                      ) : "-"}
                     </TableCell>
                     <TableCell>
                       <span

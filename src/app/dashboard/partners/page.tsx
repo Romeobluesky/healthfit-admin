@@ -20,7 +20,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -31,7 +30,7 @@ import {
 import { Plus, Pencil, Trash2, Handshake } from "lucide-react";
 import { managerMemberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import { isSuperAdmin } from "@/lib/permission";
+import { isAdmin } from "@/lib/permission";
 import type { ManagerMember, ManagerStatus } from "@/types";
 
 interface PartnerForm {
@@ -127,16 +126,16 @@ export default function PartnersPage() {
     }
   };
 
-  const statusColor = (status: ManagerStatus) => {
+  const statusBgColor = (status: ManagerStatus) => {
     switch (status) {
       case "승인":
-        return "default";
+        return "#1964dc";
       case "미승인":
-        return "secondary";
+        return "#CCFFFF";
       case "보류":
-        return "destructive";
+        return "#D457D4";
       default:
-        return "outline";
+        return "#gray";
     }
   };
 
@@ -201,9 +200,15 @@ export default function PartnersPage() {
                     <TableCell>{partner.organization}</TableCell>
                     <TableCell>{formatDate(partner.createdAt)}</TableCell>
                     <TableCell>
-                      <Badge variant={statusColor(partner.status)}>
+                      <span
+                        className="inline-flex w-15 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                        style={{
+                          backgroundColor: statusBgColor(partner.status),
+                          color: partner.status === "미승인" ? "#333" : "#fff",
+                        }}
+                      >
                         {partner.status}
-                      </Badge>
+                      </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -214,7 +219,7 @@ export default function PartnersPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        {user && isSuperAdmin(user.permission) && (
+                        {user && isAdmin(user.permission) && (
                           <Button
                             variant="ghost"
                             size="sm"
