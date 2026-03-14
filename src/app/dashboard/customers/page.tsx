@@ -17,7 +17,7 @@ import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRigh
 import Link from "next/link";
 import { memberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
-import { isSuperAdmin } from "@/lib/permission";
+import { isAdmin } from "@/lib/permission";
 import type { Member } from "@/types";
 import * as XLSX from "xlsx";
 
@@ -105,8 +105,7 @@ export default function CustomersPage() {
     const day = String(d.getDate()).padStart(2, "0");
     const h = String(d.getHours()).padStart(2, "0");
     const min = String(d.getMinutes()).padStart(2, "0");
-    const sec = String(d.getSeconds()).padStart(2, "0");
-    return `${y}-${m}-${day} ${h}:${min}:${sec}`;
+    return `${y}-${m}-${day} ${h}:${min}`;
   };
 
   const handleExcelDownload = () => {
@@ -175,14 +174,14 @@ export default function CustomersPage() {
             <TableHeader className="bg-[#4a7fb5]">
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="w-16 text-white">번호</TableHead>
+                <TableHead className="text-white">등록일</TableHead>
                 <TableHead className="text-white">이름</TableHead>
                 <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">생년월일</TableHead>
                 <TableHead className="text-white">성별</TableHead>
                 <TableHead className="text-white">유입경로</TableHead>
-                <TableHead className="text-white">등록일</TableHead>
                 <TableHead className="w-24 text-white">리포트보기</TableHead>
-                {user && isSuperAdmin(user.permission) && (
+                {user && isAdmin(user.permission) && (
                   <TableHead className="w-16 text-white">삭제</TableHead>
                 )}
               </TableRow>
@@ -204,6 +203,7 @@ export default function CustomersPage() {
                 paginatedMembers.map((member, index) => (
                   <TableRow key={member.idx}>
                     <TableCell>{(currentPage - 1) * pageSize + index + 1}</TableCell>
+                    <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
                     <TableCell>{formatPhone(member.phone)}</TableCell>
                     <TableCell>{member.birthDate || "-"}</TableCell>
@@ -222,7 +222,6 @@ export default function CustomersPage() {
                         {member.inflowPath === "web" ? "WEB" : "APP"}
                       </span>
                     </TableCell>
-                    <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" asChild>
                         <Link href={`/dashboard/customers/${member.idx}/report`}>
@@ -230,7 +229,7 @@ export default function CustomersPage() {
                         </Link>
                       </Button>
                     </TableCell>
-                    {user && isSuperAdmin(user.permission) && (
+                    {user && isAdmin(user.permission) && (
                       <TableCell>
                         <Button
                           variant="ghost"
