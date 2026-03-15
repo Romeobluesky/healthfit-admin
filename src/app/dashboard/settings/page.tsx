@@ -80,7 +80,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold"><Settings className="h-6 w-6" />환경설정</h1>
         <p className="text-muted-foreground">내 정보 관리</p>

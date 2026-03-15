@@ -82,6 +82,7 @@ src/
 | cancerDescription | `/cancerDescription` | 암 설명 |
 | cancerIncidence | `/cancerIncidence` | 암 발생률 |
 | cancerIncidenceRate | `/cancerIncidenceRate` | 암 발생 비율 |
+| memoCutomer | `/memoCutomer` | 고객 상담 메모 |
 
 ### 백엔드 서버 (별도 프로젝트)
 
@@ -226,7 +227,8 @@ ManagerMember (관리자/파트너)
         └── Member (회원) ← servicecode_idx로 연결
               ├── CheckUp (건강검진)
               │     └── Analysis (분석 결과)
-              └── Survey (설문)
+              ├── Survey (설문)
+              └── MemoCustomer (상담 메모) ← memberIdx로 연결
 ```
 
 ## 건강검진 리포트
@@ -237,3 +239,19 @@ ManagerMember (관리자/파트너)
 - 등급 체계: 안전(SAFE), 주의(CAUTION), 경고(WARNING), 위험(DANGER)
 - 생체나이 계산: `src/lib/report/metabolic-age.ts`
 - 암 위험도 계산: `src/lib/report/cancer-risk.ts`
+
+## 고객 상담 메모
+
+- 테이블: `memoCutomer` (고객당 1건, soft delete)
+- 설문결과 모달 내 상담내용 영역에서 등록/수정/삭제
+- 미등록: 빈 textarea + [등록] 버튼
+- 등록됨: 내용이 채워진 textarea + [Reset] [수정] [삭제] 버튼
+- 삭제 시 AlertDialog 모달로 확인
+
+## 상담상태 (ConsultationStatus)
+
+- Member 테이블의 `ConsultationStatus` 필드
+- 엔드포인트: `PUT /member/:idx/consultationStatus`
+- 허용값: `N`(대기중), `W`(진행중), `Y`(완료)
+- 설문결과 모달 내 라디오 버튼으로 변경, AlertDialog 모달로 확인
+- 색상: 대기중(회색), 진행중(주황), 완료(녹색)

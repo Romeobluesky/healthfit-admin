@@ -27,6 +27,7 @@ import * as XLSX from "xlsx";
 
 export default function ServiceCodesPage() {
   const [codes, setCodes] = useState<ServiceCode[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [managers, setManagers] = useState<ManagerMember[]>([]);
   const [managerMap, setManagerMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -132,7 +133,7 @@ export default function ServiceCodesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold"><KeyRound className="h-6 w-6" />서비스코드관리</h1>
         <p className="text-muted-foreground">서비스코드 발급 및 관리</p>
@@ -213,7 +214,7 @@ export default function ServiceCodesPage() {
                 paginatedCodes.map((code, index) => {
                   const status = getStatusInfo(code);
                   return (
-                    <TableRow key={code.idx}>
+                    <TableRow key={code.idx} className="cursor-pointer" data-state={selectedIdx === code.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === code.idx ? null : code.idx)}>
                       <TableCell>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                       <TableCell className="font-mono font-medium">
                         {code.serviceCodeFull ||

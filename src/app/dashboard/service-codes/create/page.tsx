@@ -170,7 +170,7 @@ export default function ServiceCodeCreatePage() {
   const selectedManager = managers.find((m) => m.id === selectedManagerId);
 
   return (
-    <div className="space-y-6 max-w-[50%]">
+    <div className="space-y-4 max-w-[50%]">
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <FilePlus2 className="h-6 w-6" />

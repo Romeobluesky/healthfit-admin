@@ -123,6 +123,9 @@
     @apply bg-background text-foreground;
     font-family: var(--font-noto-sans-kr), sans-serif;
   }
+  .text-muted-foreground {
+    font-size: 14px;
+  }
 }
 
 /* ===== 건강분석 리포트 스타일 ===== */

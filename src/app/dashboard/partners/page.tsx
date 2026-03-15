@@ -55,6 +55,7 @@ const emptyForm: PartnerForm = {
 
 export default function PartnersPage() {
   const [partners, setPartners] = useState<ManagerMember[]>([]);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
@@ -145,7 +146,7 @@ export default function PartnersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold"><Handshake className="h-6 w-6" />파트너관리</h1>
@@ -190,7 +191,7 @@ export default function PartnersPage() {
                 </TableRow>
               ) : (
                 partners.map((partner, index) => (
-                  <TableRow key={partner.idx}>
+                  <TableRow key={partner.idx} className="cursor-pointer" data-state={selectedIdx === partner.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === partner.idx ? null : partner.idx)}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell className="font-medium">
                       {partner.name}

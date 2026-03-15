@@ -78,6 +78,11 @@ export const memberApi = {
     }),
   delete: (idx: number) =>
     request<import("@/types").SqlResult>(`/member/${idx}`, { method: "DELETE" }),
+  updateConsultationStatus: (idx: number, status: string) =>
+    request<import("@/types").SqlResult>(`/member/${idx}/consultationStatus`, {
+      method: "PUT",
+      body: JSON.stringify({ ConsultationStatus: status }),
+    }),
 };
 
 // CheckUp API
@@ -197,6 +202,24 @@ export const cancerIncidenceApi = {
   getAll: () => request<import("@/types").CancerIncidence[]>("/cancerIncidence"),
   getByTitle: (title: string) =>
     request<import("@/types").CancerIncidence>(`/cancerIncidence/title/${encodeURIComponent(title)}`),
+};
+
+// MemoCustomer API
+export const memoCustomerApi = {
+  getByMember: (memberIdx: number) =>
+    request<import("@/types").MemoCustomer[]>(`/memoCutomer/member/${memberIdx}`),
+  create: (data: { memberIdx: number; mb_id: string; memoContent: string }) =>
+    request<import("@/types").SqlResult>("/memoCutomer", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (idx: number, data: { memoContent: string }) =>
+    request<import("@/types").SqlResult>(`/memoCutomer/${idx}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (idx: number) =>
+    request<import("@/types").SqlResult>(`/memoCutomer/${idx}`, { method: "DELETE" }),
 };
 
 // CancerIncidenceRate API

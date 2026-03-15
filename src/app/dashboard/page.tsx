@@ -188,7 +188,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight"><LayoutDashboard className="h-6 w-6" />대시보드</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          건강예뵈:HealthFit 서비스 현황을 한눈에 확인하세요
+          건강예보:HealthFit 서비스 현황을 한눈에 확인하세요
         </p>
       </div>
 

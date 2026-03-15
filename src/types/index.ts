@@ -77,6 +77,9 @@ export interface Member {
   deletedAt: string | null;
   HealthExaminationHistory: string | null;
   inflowPath: string | null;
+  ConsultationStatus: string | null;
+  Region1: string | null;
+  Region2: string | null;
 }
 
 // 건강검진
@@ -259,6 +262,17 @@ export interface CancerIncidence {
   sixties: number;
   seventies: number;
   eighties: number;
+}
+
+// 고객 메모
+export interface MemoCustomer {
+  idx: number;
+  memberIdx: number;
+  mb_id: string;
+  memoContent: string;
+  createdAt: string;
+  updatedAt: string | null;
+  deletedAt: string | null;
 }
 
 // 암 발생률 (성별별)

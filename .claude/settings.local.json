@@ -14,7 +14,8 @@
       "Bash(python -c \":*)",
       "Bash(npm install xlsx)",
       "Bash(grep -E \"\\\\.\\(json|config|md\\)$|^d\")",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx next:*)"
     ]
   }
 }
