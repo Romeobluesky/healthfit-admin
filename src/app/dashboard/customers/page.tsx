@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin } from "lucide-react";
+import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin } from "lucide-react";
 import Link from "next/link";
 import { memberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -95,6 +95,7 @@ export default function CustomersPage() {
   const [consultationStatus, setConsultationStatus] = useState("N");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [memoDeleteOpen, setMemoDeleteOpen] = useState(false);
+  const [memoMemberIdxSet, setMemoMemberIdxSet] = useState<Set<number>>(new Set());
   const [dialogPos, setDialogPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [regionOpen, setRegionOpen] = useState(false);
@@ -176,13 +177,17 @@ export default function CustomersPage() {
   };
 
   const handleMemoCreate = async () => {
-    if (!surveyMemberIdx || !memoContent.trim()) return;
+    if (!surveyMemberIdx || (!memoContent.trim() && !region1)) return;
     try {
+      await saveRegion();
+      if (!memoContent.trim()) { setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m)); return; }
       await memoCustomerApi.create({
         memberIdx: surveyMemberIdx,
         mb_id: user?.id || "",
         memoContent: memoContent.trim(),
       });
+      setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m));
+      setMemoMemberIdxSet((prev) => new Set(prev).add(surveyMemberIdx));
       fetchMemo(surveyMemberIdx);
     } catch {
       alert("메모 등록에 실패했습니다.");
@@ -231,6 +236,7 @@ export default function CustomersPage() {
       await memoCustomerApi.delete(memo.idx);
       setMemo(null);
       setMemoContent("");
+      if (surveyMemberIdx) setMemoMemberIdxSet((prev) => { const next = new Set(prev); next.delete(surveyMemberIdx); return next; });
     } catch {
       alert("메모 삭제에 실패했습니다.");
     } finally {
@@ -239,17 +245,27 @@ export default function CustomersPage() {
   };
 
   useEffect(() => {
-    async function fetchMembers() {
+    async function fetchData() {
       try {
         const data = await memberApi.getAll();
-        setMembers(data.sort((a: Member, b: Member) => b.idx - a.idx));
+        const sorted = data.sort((a: Member, b: Member) => b.idx - a.idx);
+        setMembers(sorted);
+        try {
+          const idxList = sorted.map((m) => m.idx);
+          if (idxList.length > 0) {
+            const result = await memoCustomerApi.checkMembers(idxList);
+            if (Array.isArray(result)) {
+              setMemoMemberIdxSet(new Set(result.map((r) => r.memberIdx)));
+            }
+          }
+        } catch { /* 메모 체크 실패 무시 */ }
       } catch {
         console.error("회원 목록 조회 실패");
       } finally {
         setLoading(false);
       }
     }
-    fetchMembers();
+    fetchData();
   }, []);
 
   const handleDelete = async (idx: number) => {
@@ -475,7 +491,7 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => handleSurveyView(member)}>
-                        <FileText className="h-4 w-4" />
+                        <MessageCircleMore className={`h-4 w-4 ${memoMemberIdxSet.has(member.idx) ? "text-blue-500" : ""}`} />
                       </Button>
                     </TableCell>
                     <TableCell>
@@ -729,7 +745,7 @@ export default function CustomersPage() {
                           size="sm"
                           className="bg-blue-500 hover:bg-blue-600 text-white"
                           onClick={handleMemoCreate}
-                          disabled={!memoContent.trim()}
+                          disabled={!memoContent.trim() && !region1}
                         >
                           등록
                         </Button>

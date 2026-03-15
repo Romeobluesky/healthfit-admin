@@ -206,6 +206,11 @@ export const cancerIncidenceApi = {
 
 // MemoCustomer API
 export const memoCustomerApi = {
+  checkMembers: (memberIdxList: number[]) =>
+    request<{ memberIdx: number }[]>("/memoCutomer/checkMembers", {
+      method: "POST",
+      body: JSON.stringify({ memberIdxList }),
+    }),
   getByMember: (memberIdx: number) =>
     request<import("@/types").MemoCustomer[]>(`/memoCutomer/member/${memberIdx}`),
   create: (data: { memberIdx: number; mb_id: string; memoContent: string }) =>
