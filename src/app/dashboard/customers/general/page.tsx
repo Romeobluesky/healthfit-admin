@@ -12,12 +12,46 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Trash2, FileText, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download } from "lucide-react";
-import { memberApi } from "@/lib/api";
+import { memberApi, surveyApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
-import type { Member } from "@/types";
+import type { Member, Survey } from "@/types";
 import * as XLSX from "xlsx";
+
+const SMOKING_LABELS: Record<number, string> = {
+  0: "비흡연",
+  1: "과거 흡연 (금연 중)",
+  2: "현재 흡연 (하루 10개비 미만)",
+  4: "현재 흡연 (하루 10개비 이상)",
+};
+
+const DRINK_LABELS: Record<number, string> = {
+  0: "마시지 않음",
+  1: "주 1~2회",
+  2: "주 3~4회",
+  3: "주 5회 이상",
+};
+
+const EXERCISE_LABELS: Record<number, string> = {
+  1: "거의 하지 않음",
+  0: "주 1~2회",
+  [-2]: "주 3~4회",
+  [-3]: "주 5회 이상",
+};
+
+const LIFE_LABELS: Record<number, string> = {
+  1: "거의 하지 않음",
+  [-1]: "주 1~2회",
+  [-2]: "주 3회 이상",
+};
 
 export default function GeneralCustomersPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -26,8 +60,27 @@ export default function GeneralCustomersPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [surveyModalOpen, setSurveyModalOpen] = useState(false);
+  const [surveyData, setSurveyData] = useState<Survey[] | null>(null);
+  const [surveyLoading, setSurveyLoading] = useState(false);
+  const [surveyMemberName, setSurveyMemberName] = useState("");
   const pageSize = 10;
   const user = useAuthStore((s) => s.user);
+
+  const handleSurveyView = async (member: Member) => {
+    setSurveyModalOpen(true);
+    setSurveyLoading(true);
+    setSurveyMemberName(member.name);
+    setSurveyData(null);
+    try {
+      const data = await surveyApi.getByMember(member.idx);
+      setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
+    } catch {
+      setSurveyData([]);
+    } finally {
+      setSurveyLoading(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchMembers() {
@@ -178,7 +231,7 @@ export default function GeneralCustomersPage() {
                 <TableHead className="text-white">생년월일</TableHead>
                 <TableHead className="text-white">성별</TableHead>
                 <TableHead className="text-white">유입경로</TableHead>
-                <TableHead className="w-24 text-white">설문내역보기</TableHead>
+                <TableHead className="w-24 text-white">설문결과보기</TableHead>
                 {user && isAdmin(user.permission) && (
                   <TableHead className="w-16 text-white">삭제</TableHead>
                 )}
@@ -226,7 +279,7 @@ export default function GeneralCustomersPage() {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" disabled>
+                      <Button variant="ghost" size="sm" onClick={() => handleSurveyView(member)}>
                         <FileText className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -281,6 +334,111 @@ export default function GeneralCustomersPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={surveyModalOpen} onOpenChange={setSurveyModalOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{surveyMemberName}님의 설문결과</DialogTitle>
+            <DialogDescription>건강 설문조사 응답 내역입니다.</DialogDescription>
+          </DialogHeader>
+
+          {surveyLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">불러오는 중...</p>
+            </div>
+          ) : !surveyData || surveyData.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">설문 데이터가 없습니다.</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {surveyData.map((survey, i) => {
+                const diff = survey.healthage - survey.age;
+                return (
+                  <div key={survey.idx} className="space-y-4">
+                    {surveyData.length > 1 && (
+                      <p className="text-sm font-medium text-muted-foreground">
+                        설문 {i + 1} — {formatDate(survey.createdAt)}
+                      </p>
+                    )}
+                    {surveyData.length === 1 && (
+                      <p className="text-sm text-muted-foreground">
+                        작성일: {formatDate(survey.createdAt)}
+                      </p>
+                    )}
+
+                    {/* 생체나이 요약 */}
+                    <div className="rounded-lg border p-4">
+                      <div className="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <p className="text-xs text-muted-foreground">실제 나이</p>
+                          <p className="text-2xl font-bold">{survey.age}<span className="text-sm font-normal">세</span></p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">생체 나이</p>
+                          <p className="text-2xl font-bold text-blue-600">{survey.healthage}<span className="text-sm font-normal">세</span></p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">나이 차이</p>
+                          <p className={`text-2xl font-bold ${diff <= 0 ? "text-green-600" : "text-red-500"}`}>
+                            {diff > 0 ? "+" : ""}{diff.toFixed(1)}<span className="text-sm font-normal">세</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 신체 정보 */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">신체 정보</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <SurveyItem label="키" value={`${survey.height} cm`} />
+                        <SurveyItem label="몸무게" value={`${survey.weight} kg`} />
+                      </div>
+                    </div>
+
+                    {/* 생활 습관 */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">생활 습관</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <SurveyItem label="흡연" value={SMOKING_LABELS[survey.smoking] ?? `${survey.smoking}`} />
+                        <SurveyItem label="음주" value={DRINK_LABELS[survey.drink] ?? `${survey.drink}`} />
+                        <SurveyItem label="유산소운동" value={EXERCISE_LABELS[survey.exercise] ?? `${survey.exercise}`} />
+                        <SurveyItem label="근력운동" value={LIFE_LABELS[survey.life] ?? `${survey.life}`} />
+                      </div>
+                    </div>
+
+                    {/* 건강 항목 */}
+                    <div>
+                      <h4 className="text-sm font-semibold mb-2">건강 항목</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <SurveyItem label="육류 섭취" value={survey.meat} />
+                        <SurveyItem label="채소 섭취" value={survey.vegetable} />
+                        <SurveyItem label="수면" value={survey.sleep} />
+                        <SurveyItem label="혈압" value={survey.bloodpressure} />
+                        <SurveyItem label="당뇨" value={survey.diabetes} />
+                        <SurveyItem label="감기" value={survey.cold} />
+                        <SurveyItem label="분노" value={survey.anger} />
+                        <SurveyItem label="신경" value={survey.nerve} />
+                      </div>
+                    </div>
+
+                    {i < surveyData.length - 1 && <hr />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function SurveyItem({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="flex items-center justify-between rounded-md bg-muted/50 px-3 py-2">
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium">{value}</span>
     </div>
   );
 }
