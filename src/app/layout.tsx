@@ -11,8 +11,11 @@ const notoSansKR = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: "HealthFit Admin",
+  title: "HealthFit Administrator",
   description: "HealthFit 관리자 대시보드",
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({
