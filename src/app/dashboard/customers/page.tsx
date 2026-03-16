@@ -37,7 +37,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin } from "lucide-react";
+import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { memberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -95,6 +95,9 @@ export default function CustomersPage() {
   const [consultationStatus, setConsultationStatus] = useState("N");
   const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [memoDeleteOpen, setMemoDeleteOpen] = useState(false);
+  const [memoCreateOpen, setMemoCreateOpen] = useState(false);
+  const [memoUpdateOpen, setMemoUpdateOpen] = useState(false);
+  const [memoSaving, setMemoSaving] = useState(false);
   const [memoMemberIdxSet, setMemoMemberIdxSet] = useState<Set<number>>(new Set());
   const [dialogPos, setDialogPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -178,31 +181,47 @@ export default function CustomersPage() {
 
   const handleMemoCreate = async () => {
     if (!surveyMemberIdx || (!memoContent.trim() && !region1)) return;
+    setMemoSaving(true);
     try {
-      await saveRegion();
-      if (!memoContent.trim()) { setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m)); return; }
-      await memoCustomerApi.create({
-        memberIdx: surveyMemberIdx,
-        mb_id: user?.id || "",
-        memoContent: memoContent.trim(),
-      });
-      setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m));
-      setMemoMemberIdxSet((prev) => new Set(prev).add(surveyMemberIdx));
-      fetchMemo(surveyMemberIdx);
+      await Promise.all([
+        (async () => {
+          await saveRegion();
+          if (!memoContent.trim()) { setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m)); return; }
+          await memoCustomerApi.create({
+            memberIdx: surveyMemberIdx,
+            mb_id: user?.id || "",
+            memoContent: memoContent.trim(),
+          });
+          setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m));
+          setMemoMemberIdxSet((prev) => new Set(prev).add(surveyMemberIdx));
+          fetchMemo(surveyMemberIdx);
+        })(),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
     } catch {
       alert("메모 등록에 실패했습니다.");
+    } finally {
+      setMemoSaving(false);
     }
   };
 
   const handleMemoUpdate = async () => {
     if (!memo || !memoContent.trim() || !surveyMemberIdx) return;
+    setMemoSaving(true);
     try {
-      await saveRegion();
-      await memoCustomerApi.update(memo.idx, { memoContent: memoContent.trim() });
-      setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m));
-      fetchMemo(surveyMemberIdx);
+      await Promise.all([
+        (async () => {
+          await saveRegion();
+          await memoCustomerApi.update(memo.idx, { memoContent: memoContent.trim() });
+          setMembers((prev) => prev.map((m) => m.idx === surveyMemberIdx ? { ...m, Region1: region1 || null, Region2: region2 || null } : m));
+          fetchMemo(surveyMemberIdx);
+        })(),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
     } catch {
       alert("메모 수정에 실패했습니다.");
+    } finally {
+      setMemoSaving(false);
     }
   };
 
@@ -232,15 +251,22 @@ export default function CustomersPage() {
 
   const handleMemoDelete = async () => {
     if (!memo || !surveyMemberIdx) return;
+    setMemoDeleteOpen(false);
+    setMemoSaving(true);
     try {
-      await memoCustomerApi.delete(memo.idx);
-      setMemo(null);
-      setMemoContent("");
-      if (surveyMemberIdx) setMemoMemberIdxSet((prev) => { const next = new Set(prev); next.delete(surveyMemberIdx); return next; });
+      await Promise.all([
+        (async () => {
+          await memoCustomerApi.delete(memo.idx);
+          setMemo(null);
+          setMemoContent("");
+          if (surveyMemberIdx) setMemoMemberIdxSet((prev) => { const next = new Set(prev); next.delete(surveyMemberIdx); return next; });
+        })(),
+        new Promise((resolve) => setTimeout(resolve, 2000)),
+      ]);
     } catch {
       alert("메모 삭제에 실패했습니다.");
     } finally {
-      setMemoDeleteOpen(false);
+      setMemoSaving(false);
     }
   };
 
@@ -555,6 +581,11 @@ export default function CustomersPage() {
 
       <Dialog open={surveyModalOpen} onOpenChange={setSurveyModalOpen}>
         <DialogContent className={`sm:max-w-2xl max-h-[90vh] overflow-y-auto translate-x-0! translate-y-0! ${isDragging ? "duration-0!" : ""}`} style={{ transform: `translate(calc(-50% + ${dialogPos.x}px), calc(-50% + ${dialogPos.y}px))` }} onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+          {memoSaving && (
+            <div className="absolute inset-0 z-50 flex items-center justify-center rounded-lg bg-background/80">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            </div>
+          )}
           <DialogHeader className="cursor-move select-none" onMouseDown={handleDragStart}>
             <DialogTitle>{surveyMemberName}님의 설문결과</DialogTitle>
             <div className="flex items-center justify-between">
@@ -722,14 +753,6 @@ export default function CustomersPage() {
                           >
                             Reset
                           </Button>
-                          <Button
-                            size="sm"
-                            className="bg-blue-500 hover:bg-blue-600 text-white"
-                            onClick={handleMemoUpdate}
-                            disabled={!memoContent.trim()}
-                          >
-                            수정
-                          </Button>
                           {user && isAdmin(user.permission) && (
                             <Button
                               size="sm"
@@ -739,17 +762,32 @@ export default function CustomersPage() {
                               삭제
                             </Button>
                           )}
+                          <Button
+                            size="sm"
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                            onClick={() => setMemoUpdateOpen(true)}
+                            disabled={!memoContent.trim()}
+                          >
+                            수정
+                          </Button>
                         </>
                       ) : (
                         <Button
                           size="sm"
                           className="bg-blue-500 hover:bg-blue-600 text-white"
-                          onClick={handleMemoCreate}
+                          onClick={() => setMemoCreateOpen(true)}
                           disabled={!memoContent.trim() && !region1}
                         >
                           등록
                         </Button>
                       )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSurveyModalOpen(false)}
+                      >
+                        닫기
+                      </Button>
                       </div>
                     </div>
                   </div>
@@ -772,6 +810,40 @@ export default function CustomersPage() {
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>
             <AlertDialogAction onClick={confirmConsultationStatusChange}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={memoCreateOpen} onOpenChange={setMemoCreateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>상담내용 등록</AlertDialogTitle>
+            <AlertDialogDescription>
+              상담내용을 등록하시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setMemoCreateOpen(false); handleMemoCreate(); }}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={memoUpdateOpen} onOpenChange={setMemoUpdateOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>상담내용 수정</AlertDialogTitle>
+            <AlertDialogDescription>
+              상담내용을 수정하시겠습니까?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>취소</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setMemoUpdateOpen(false); handleMemoUpdate(); }}>
               확인
             </AlertDialogAction>
           </AlertDialogFooter>
