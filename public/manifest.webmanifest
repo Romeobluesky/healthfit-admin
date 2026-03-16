@@ -1,5 +1,5 @@
 {
-  "name": "HealthFit Administrator",
+  "name": "HealthFit 관리자페이지",
   "short_name": "HealthFit",
   "start_url": "/dashboard",
   "display": "standalone",
