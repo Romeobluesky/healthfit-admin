@@ -543,9 +543,9 @@ export default function GeneralCustomersPage() {
                     <TableCell>
                       {(() => {
                         const status = member.ConsultationStatus || "N";
-                        const cfg = { N: { label: "대기중", bg: "#6b7280" }, W: { label: "진행중", bg: "#38bdf8" }, Y: { label: "완료", bg: "#1e3a5f" } }[status] || { label: "대기중", bg: "#6b7280" };
+                        const cfg = { N: { label: "대기중", bg: "#6b7280", color: "#fff" }, W: { label: "진행중", bg: "#1e3a5f", color: "#fff" }, Y: { label: "완료", bg: "#38bdf8", color: "#000" } }[status] || { label: "대기중", bg: "#6b7280", color: "#fff" };
                         return (
-                          <span className="inline-flex w-15 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: cfg.bg }}>
+                          <span className="inline-flex w-15 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ backgroundColor: cfg.bg, color: cfg.color }}>
                             {cfg.label}
                           </span>
                         );
@@ -757,8 +757,8 @@ export default function GeneralCustomersPage() {
                         <span className="text-muted-foreground">상담상태</span>
                         {[
                           { value: "N", label: "대기중", color: "text-gray-500" },
-                          { value: "W", label: "진행중", color: "text-sky-400" },
-                          { value: "Y", label: "완료", color: "text-blue-900" },
+                          { value: "W", label: "진행중", color: "text-blue-900" },
+                          { value: "Y", label: "완료", color: "text-sky-400" },
                         ].map((opt) => (
                           <label key={opt.value} className={`flex items-center gap-1 cursor-pointer ${opt.color}`}>
                             <input
