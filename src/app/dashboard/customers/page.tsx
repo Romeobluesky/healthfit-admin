@@ -83,6 +83,8 @@ export default function CustomersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [searchRegion1, setSearchRegion1] = useState("all");
+  const [searchRegion2, setSearchRegion2] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [surveyModalOpen, setSurveyModalOpen] = useState(false);
   const [surveyData, setSurveyData] = useState<Survey[] | null>(null);
@@ -330,7 +332,15 @@ export default function CustomersPage() {
       matchesStatus = (m.ConsultationStatus || "N") === statusFilter;
     }
 
-    return matchesSearch && matchesDate && notDeleted && matchesStatus;
+    let matchesRegion = true;
+    if (searchRegion1 !== "all") {
+      matchesRegion = m.Region1 === searchRegion1;
+      if (matchesRegion && searchRegion2 !== "all") {
+        matchesRegion = m.Region2 === searchRegion2;
+      }
+    }
+
+    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion;
   });
 
   // 건강검진고객: HealthExaminationHistory === "Y"
@@ -344,7 +354,7 @@ export default function CustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate, statusFilter]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2]);
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
@@ -371,6 +381,8 @@ export default function CustomersPage() {
       전화번호: formatPhone(member.phone),
       생년월일: member.birthDate || "-",
       성별: member.gender ? formatGender(member.gender) : "-",
+      지역1: member.Region1 || "-",
+      지역2: member.Region2 || "-",
       유입경로: member.inflowPath === "web" ? "WEB" : "APP",
       등록일: formatDate(member.createdAt),
     }));
@@ -382,7 +394,8 @@ export default function CustomersPage() {
       ? `_${startDate || "시작"}~${endDate || "현재"}`
       : "";
     const statusLabel = statusFilter !== "all" ? `_${{ N: "대기중", W: "진행중", Y: "완료" }[statusFilter]}` : "";
-    XLSX.writeFile(wb, `건강검진고객${dateRange}${statusLabel}.xlsx`);
+    const regionLabel = searchRegion1 !== "all" ? `_${searchRegion1}${searchRegion2 !== "all" ? ` ${searchRegion2}` : ""}` : "";
+    XLSX.writeFile(wb, `건강검진고객${dateRange}${regionLabel}${statusLabel}.xlsx`);
   };
 
   return (
@@ -415,6 +428,31 @@ export default function CustomersPage() {
             onChange={(e) => setEndDate(e.target.value)}
             className="w-40"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">지역</span>
+          <Select value={searchRegion1} onValueChange={(v) => { setSearchRegion1(v); setSearchRegion2("all"); }}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="시/도" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              {REGION_KEYS.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={searchRegion2} onValueChange={setSearchRegion2} disabled={searchRegion1 === "all"}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="시/군/구" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              {searchRegion1 !== "all" && REGIONS[searchRegion1]?.map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">상담상태</span>
@@ -600,12 +638,13 @@ export default function CustomersPage() {
             </div>
           </DialogHeader>
 
+          <div className="h-145 overflow-y-auto">
           {surveyLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">불러오는 중...</p>
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : !surveyData || surveyData.length === 0 ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center h-full">
               <p className="text-muted-foreground">설문 데이터가 없습니다.</p>
             </div>
           ) : (
@@ -796,6 +835,7 @@ export default function CustomersPage() {
 
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
 
