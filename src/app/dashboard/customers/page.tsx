@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
@@ -415,18 +416,16 @@ export default function CustomersPage() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Input
-            type="date"
+          <DatePicker
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-40"
+            onChange={setStartDate}
+            placeholder="시작일"
           />
           <span className="text-muted-foreground">~</span>
-          <Input
-            type="date"
+          <DatePicker
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-40"
+            onChange={setEndDate}
+            placeholder="종료일"
           />
         </div>
         <div className="flex items-center gap-2">
