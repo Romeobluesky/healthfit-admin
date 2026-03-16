@@ -86,8 +86,8 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">내 정보 관리</p>
       </div>
 
-      <div className="flex gap-6">
-        <Card className="w-64 shrink-0">
+      <div className="flex flex-col md:flex-row gap-6">
+        <Card className="md:w-64 shrink-0">
           <CardHeader>
             <CardTitle>프로필 사진</CardTitle>
           </CardHeader>
