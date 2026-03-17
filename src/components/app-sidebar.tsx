@@ -19,6 +19,8 @@ import {
   FilePlus2,
   UserPlus,
 } from "lucide-react";
+import { useAuthStore } from "@/store/auth";
+import { isAdmin } from "@/lib/permission";
 import {
   Sidebar,
   SidebarContent,
@@ -92,12 +94,22 @@ const settingsSubItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const isAdminUser = user ? isAdmin(user.permission) : false;
   const isServiceCodesActive = pathname.startsWith("/dashboard/service-codes");
   const isCustomersActive = pathname.startsWith("/dashboard/customers");
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
   const [serviceCodesOpen, setServiceCodesOpen] = useState(isServiceCodesActive);
   const [customersOpen, setCustomersOpen] = useState(isCustomersActive);
   const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
+
+  const filteredServiceCodeSubItems = isAdminUser
+    ? serviceCodeSubItems
+    : serviceCodeSubItems.filter((item) => item.url === "/dashboard/service-codes");
+
+  const filteredSettingsSubItems = isAdminUser
+    ? settingsSubItems
+    : settingsSubItems.filter((item) => item.url === "/dashboard/settings");
 
   return (
     <Sidebar>
@@ -165,14 +177,16 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               </Collapsible>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/partners")}>
-                  <Link href="/dashboard/partners">
-                    <Handshake className="h-4 w-4" />
-                    <span>파트너관리</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isAdminUser && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/partners")}>
+                    <Link href="/dashboard/partners">
+                      <Handshake className="h-4 w-4" />
+                      <span>파트너관리</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
               <Collapsible
                 open={serviceCodesOpen}
@@ -193,7 +207,7 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {serviceCodeSubItems.map((item) => {
+                      {filteredServiceCodeSubItems.map((item) => {
                         const isSubActive = pathname === item.url;
                         return (
                           <SidebarMenuSubItem key={item.url}>
@@ -230,7 +244,7 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {settingsSubItems.map((item) => {
+                      {filteredSettingsSubItems.map((item) => {
                         const isSubActive = pathname === item.url;
                         return (
                           <SidebarMenuSubItem key={item.url}>
