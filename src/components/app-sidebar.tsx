@@ -18,6 +18,7 @@ import {
   List,
   FilePlus2,
   UserPlus,
+  Megaphone,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
@@ -89,6 +90,11 @@ const settingsSubItems = [
     title: "약관 관리",
     url: "/dashboard/settings/clauses",
     icon: FileText,
+  },
+  {
+    title: "공지글 관리",
+    url: "/dashboard/settings/notices",
+    icon: Megaphone,
   },
 ];
 

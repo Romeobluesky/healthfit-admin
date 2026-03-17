@@ -178,6 +178,24 @@ export const clauseApi = {
     request<import("@/types").SqlResult>(`/clause/${idx}`, { method: "DELETE" }),
 };
 
+// Notice API
+export const noticeApi = {
+  getAll: () => request<import("@/types").Notice[]>("/notice"),
+  getById: (idx: number) => request<import("@/types").Notice>(`/notice/${idx}`),
+  create: (data: { title: string; content: string }) =>
+    request<import("@/types").SqlResult>("/notice", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  update: (idx: number, data: Partial<{ title: string; content: string }>) =>
+    request<import("@/types").SqlResult>(`/notice/${idx}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
+  delete: (idx: number) =>
+    request<import("@/types").SqlResult>(`/notice/${idx}`, { method: "DELETE" }),
+};
+
 // Server Status API
 export const serverApi = {
   getStatus: () => request<{ status: string }>("/server/status"),
