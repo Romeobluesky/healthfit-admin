@@ -548,7 +548,7 @@ export default function CustomersPage() {
                 </TableRow>
               ) : (
                 paginatedMembers.map((member, index) => (
-                  <TableRow key={member.idx} className="cursor-pointer" data-state={selectedIdx === member.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === member.idx ? null : member.idx)}>
+                  <TableRow key={member.idx} className="cursor-default" data-state={selectedIdx === member.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === member.idx ? null : member.idx)}>
                     <TableCell>{(currentPage - 1) * pageSize + index + 1}</TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
@@ -596,12 +596,12 @@ export default function CustomersPage() {
                       })()}
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => handleSurveyView(member)}>
+                      <Button variant="ghost" size="sm" className="cursor-pointer" onClick={() => handleSurveyView(member)}>
                         <MessageCircleMore className={`h-4 w-4 ${memoMemberIdxSet.has(member.idx) ? "text-blue-500" : ""}`} />
                       </Button>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
+                      <Button variant="ghost" size="sm" className="cursor-pointer" asChild>
                         <Link href={`/dashboard/customers/${member.idx}/report`}>
                           <FileText className="h-4 w-4" />
                         </Link>
@@ -613,7 +613,7 @@ export default function CustomersPage() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleDelete(member.idx)}
-                          className="text-destructive hover:text-destructive"
+                          className="cursor-pointer text-destructive hover:text-destructive"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
