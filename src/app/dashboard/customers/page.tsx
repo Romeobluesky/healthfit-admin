@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2 } from "lucide-react";
+import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off } from "lucide-react";
 import Link from "next/link";
 import { memberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -102,6 +102,8 @@ export default function CustomersPage() {
   const [memoUpdateOpen, setMemoUpdateOpen] = useState(false);
   const [memoSaving, setMemoSaving] = useState(false);
   const [memoMemberIdxSet, setMemoMemberIdxSet] = useState<Set<number>>(new Set());
+  const [buttonCheckMap, setButtonCheckMap] = useState<Map<number, number>>(new Map());
+  const [surveyButtonCheck, setSurveyButtonCheck] = useState<number>(0);
   const [dialogPos, setDialogPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [regionOpen, setRegionOpen] = useState(false);
@@ -162,6 +164,7 @@ export default function CustomersPage() {
     setRegion2(member.Region2 || "");
     setRegionOpen(false);
     setDialogPos({ x: 0, y: 0 });
+    setSurveyButtonCheck(0);
     try {
       const data = await surveyApi.getByMember(member.idx);
       setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
@@ -171,6 +174,10 @@ export default function CustomersPage() {
       setSurveyLoading(false);
     }
     fetchMemo(member.idx);
+    try {
+      const bc = await memberApi.getButtonCheck(member.idx);
+      setSurveyButtonCheck(bc?.buttonCheck ?? 0);
+    } catch { setSurveyButtonCheck(0); }
   };
 
   const saveRegion = async () => {
@@ -288,6 +295,12 @@ export default function CustomersPage() {
             }
           }
         } catch { /* 메모 체크 실패 무시 */ }
+        try {
+          const results = await Promise.all(sorted.map((m) => memberApi.getButtonCheck(m.idx).catch(() => null)));
+          const map = new Map<number, number>();
+          results.forEach((r) => { if (r) map.set(r.idx, r.buttonCheck); });
+          setButtonCheckMap(map);
+        } catch { /* buttonCheck 조회 실패 무시 */ }
       } catch {
         console.error("회원 목록 조회 실패");
       } finally {
@@ -488,6 +501,7 @@ export default function CustomersPage() {
                 <TableHead className="text-white">생년월일</TableHead>
                 <TableHead className="text-white">성별</TableHead>
                 <TableHead className="text-white">지역</TableHead>
+                <TableHead className="text-white">요청버튼</TableHead>
                 <TableHead className="text-white">유입경로</TableHead>
                 <TableHead className="text-white">상담상태</TableHead>
                 <TableHead className="w-24 text-white">설문/상담</TableHead>
@@ -500,13 +514,13 @@ export default function CustomersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8">
+                  <TableCell colSpan={12} className="text-center py-8">
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : healthCheckMembers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8">
+                  <TableCell colSpan={12} className="text-center py-8">
                     데이터가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -530,6 +544,13 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell className="text-xs">
                       {member.Region1 ? `${member.Region1}${member.Region2 ? ` ${member.Region2}` : ""}` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {buttonCheckMap.get(member.idx) === 1 ? (
+                        <MousePointer2 className="h-4 w-4 mx-auto" style={{ color: "#04C6F7" }} />
+                      ) : (
+                        <MousePointer2Off className="h-4 w-4 mx-auto" style={{ color: "#CCCCCC" }} />
+                      )}
                     </TableCell>
                     <TableCell>
                       <span
@@ -693,9 +714,14 @@ export default function CustomersPage() {
 
               {/* 상담내용 (메모) */}
               <div>
-                <h4 className="text-sm font-semibold mb-2">
-                  {surveyMemberName}님의 상담내용
-                </h4>
+                <div className="flex items-center gap-3 mb-2">
+                  <h4 className="text-sm font-semibold">
+                    {surveyMemberName}님의 상담내용
+                  </h4>
+                  <span className="text-xs font-medium" style={{ color: surveyButtonCheck === 1 ? "#04C6F7" : "#CCCCCC" }}>
+                    {surveyButtonCheck === 1 ? "분석요청 버튼을 클릭했습니다." : "분석요청 버튼을 클릭하지 않았습니다."}
+                  </span>
+                </div>
 
                 {memoLoading ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">불러오는 중...</p>

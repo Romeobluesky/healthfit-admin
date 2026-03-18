@@ -80,6 +80,7 @@ export interface Member {
   ConsultationStatus: string | null;
   Region1: string | null;
   Region2: string | null;
+  buttonCheck?: number | null;
 }
 
 // 건강검진

@@ -83,6 +83,13 @@ export const memberApi = {
       method: "PUT",
       body: JSON.stringify({ ConsultationStatus: status }),
     }),
+  getButtonCheck: (idx: number) =>
+    request<{ idx: number; buttonCheck: number }>(`/member/${idx}/buttonCheck`),
+  updateButtonCheck: (idx: number, buttonCheck: number) =>
+    request<import("@/types").SqlResult>(`/member/${idx}/buttonCheck`, {
+      method: "PUT",
+      body: JSON.stringify({ buttonCheck }),
+    }),
 };
 
 // CheckUp API
