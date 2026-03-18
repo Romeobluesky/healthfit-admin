@@ -81,6 +81,7 @@ export default function GeneralCustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [buttonCheckFilter, setButtonCheckFilter] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [searchRegion1, setSearchRegion1] = useState("all");
@@ -353,7 +354,13 @@ export default function GeneralCustomersPage() {
       }
     }
 
-    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion;
+    let matchesButtonCheck = true;
+    if (buttonCheckFilter !== "all") {
+      const bc = buttonCheckMap.get(m.idx) ?? 0;
+      matchesButtonCheck = buttonCheckFilter === "1" ? bc === 1 : bc === 0;
+    }
+
+    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion && matchesButtonCheck;
   });
 
   // 일반고객: HealthExaminationHistory !== "Y"
@@ -367,7 +374,7 @@ export default function GeneralCustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter]);
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
@@ -396,6 +403,7 @@ export default function GeneralCustomersPage() {
       성별: member.gender ? formatGender(member.gender) : "-",
       지역1: member.Region1 || "-",
       지역2: member.Region2 || "-",
+      요청버튼: buttonCheckMap.get(member.idx) === 1 ? "클릭" : "미클릭",
       유입경로: member.inflowPath === "web" ? "WEB" : "APP",
       등록일: formatDate(member.createdAt),
     }));
@@ -408,7 +416,8 @@ export default function GeneralCustomersPage() {
       : "";
     const statusLabel = statusFilter !== "all" ? `_${{ N: "대기중", W: "진행중", Y: "완료" }[statusFilter]}` : "";
     const regionLabel = searchRegion1 !== "all" ? `_${searchRegion1}${searchRegion2 !== "all" ? ` ${searchRegion2}` : ""}` : "";
-    XLSX.writeFile(wb, `일반고객${dateRange}${regionLabel}${statusLabel}.xlsx`);
+    const buttonCheckLabel = buttonCheckFilter !== "all" ? `_${buttonCheckFilter === "1" ? "클릭" : "미클릭"}` : "";
+    XLSX.writeFile(wb, `일반고객${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}.xlsx`);
   };
 
   return (
@@ -476,6 +485,19 @@ export default function GeneralCustomersPage() {
               <SelectItem value="N">대기중</SelectItem>
               <SelectItem value="W">진행중</SelectItem>
               <SelectItem value="Y">완료</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">요청버튼</span>
+          <Select value={buttonCheckFilter} onValueChange={setButtonCheckFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="요청버튼" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="1">클릭</SelectItem>
+              <SelectItem value="0">미클릭</SelectItem>
             </SelectContent>
           </Select>
         </div>
