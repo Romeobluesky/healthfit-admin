@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off } from "lucide-react";
+import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { memberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
@@ -80,6 +80,7 @@ export default function CustomersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<SelectedIdx>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [buttonCheckFilter, setButtonCheckFilter] = useState("all");
@@ -281,35 +282,42 @@ export default function CustomersPage() {
     }
   };
 
-  useEffect(() => {
-    async function fetchData() {
+  const fetchData = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    try {
+      const data = await memberApi.getAll();
+      const sorted = data.sort((a: Member, b: Member) => b.idx - a.idx);
+      setMembers(sorted);
       try {
-        const data = await memberApi.getAll();
-        const sorted = data.sort((a: Member, b: Member) => b.idx - a.idx);
-        setMembers(sorted);
-        try {
-          const idxList = sorted.map((m) => m.idx);
-          if (idxList.length > 0) {
-            const result = await memoCustomerApi.checkMembers(idxList);
-            if (Array.isArray(result)) {
-              setMemoMemberIdxSet(new Set(result.map((r) => r.memberIdx)));
-            }
+        const idxList = sorted.map((m) => m.idx);
+        if (idxList.length > 0) {
+          const result = await memoCustomerApi.checkMembers(idxList);
+          if (Array.isArray(result)) {
+            setMemoMemberIdxSet(new Set(result.map((r) => r.memberIdx)));
           }
-        } catch { /* 메모 체크 실패 무시 */ }
-        try {
-          const results = await Promise.all(sorted.map((m) => memberApi.getButtonCheck(m.idx).catch(() => null)));
-          const map = new Map<number, number>();
-          results.forEach((r) => { if (r) map.set(r.idx, r.buttonCheck); });
-          setButtonCheckMap(map);
-        } catch { /* buttonCheck 조회 실패 무시 */ }
-      } catch {
-        console.error("회원 목록 조회 실패");
-      } finally {
-        setLoading(false);
-      }
+        }
+      } catch { /* 메모 체크 실패 무시 */ }
+      try {
+        const results = await Promise.all(sorted.map((m) => memberApi.getButtonCheck(m.idx).catch(() => null)));
+        const map = new Map<number, number>();
+        results.forEach((r) => { if (r) map.set(r.idx, r.buttonCheck); });
+        setButtonCheckMap(map);
+      } catch { /* buttonCheck 조회 실패 무시 */ }
+    } catch {
+      console.error("회원 목록 조회 실패");
+    } finally {
+      if (isRefresh) setRefreshing(false);
+      else setLoading(false);
     }
+  };
+
+  useEffect(() => {
     fetchData();
-  }, []);
+    const interval = setInterval(() => {
+      if (!surveyModalOpen) fetchData(true);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [surveyModalOpen]);
 
   const handleDelete = async (idx: number) => {
     if (!confirm("정말 삭제하시겠습니까?")) return;
@@ -505,6 +513,10 @@ export default function CustomersPage() {
         <Button variant="outline" onClick={handleExcelDownload} disabled={healthCheckMembers.length === 0}>
           <Download className="h-4 w-4 mr-2" />
           엑셀 다운로드
+        </Button>
+        <Button variant="outline" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+          새로고침
         </Button>
       </div>
 
