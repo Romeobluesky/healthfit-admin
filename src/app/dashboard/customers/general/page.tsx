@@ -38,11 +38,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Trash2, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw } from "lucide-react";
-import { memberApi, surveyApi, memoCustomerApi } from "@/lib/api";
+import { memberApi, managerMemberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
-import type { Member, Survey, MemoCustomer } from "@/types";
+import type { Member, ManagerMember, Survey, MemoCustomer } from "@/types";
 import { REGIONS, REGION_KEYS } from "@/lib/regions";
 import * as XLSX from "xlsx";
 
@@ -110,6 +110,8 @@ export default function GeneralCustomersPage() {
   const [regionOpen, setRegionOpen] = useState(false);
   const [region1, setRegion1] = useState("");
   const [region2, setRegion2] = useState("");
+  const [partnerFilter, setPartnerFilter] = useState("all");
+  const [partners, setPartners] = useState<ManagerMember[]>([]);
   const pageSize = 10;
   const user = useAuthStore((s) => s.user);
 
@@ -284,9 +286,15 @@ export default function GeneralCustomersPage() {
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
-      const data = await memberApi.getAll();
+      const [data, partnerData] = await Promise.all([
+        memberApi.getAll(),
+        managerMemberApi.getAll(),
+      ]);
       const sorted = data.sort((a: Member, b: Member) => b.idx - a.idx);
       setMembers(sorted);
+      if (Array.isArray(partnerData)) {
+        setPartners(partnerData.filter((p) => !p.deletedAt && p.permission === 8));
+      }
       try {
         const idxList = sorted.map((m) => m.idx);
         if (idxList.length > 0) {
@@ -328,7 +336,23 @@ export default function GeneralCustomersPage() {
     }
   };
 
+  const partnerMap = useMemo(() => {
+    const map = new Map<string, string>();
+    partners.forEach((p) => map.set(p.id, p.name));
+    return map;
+  }, [partners]);
+
   const filteredMembers = members.filter((m) => {
+    // 파트너 로그인 시 본인의 고객만 표시
+    if (user && !isAdmin(user.permission) && m.partnerId !== user.id) {
+      return false;
+    }
+
+    // 파트너 필터
+    if (partnerFilter !== "all") {
+      if (!m.partnerId || m.partnerId !== partnerFilter) return false;
+    }
+
     const matchesSearch =
       m.name?.includes(search) ||
       m.phone?.includes(search) ||
@@ -382,7 +406,7 @@ export default function GeneralCustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter]);
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
@@ -405,6 +429,7 @@ export default function GeneralCustomersPage() {
   const handleExcelDownload = () => {
     const excelData = generalMembers.map((member, index) => ({
       번호: generalMembers.length - index,
+      파트너: member.partnerId ? (partnerMap.get(member.partnerId) || member.partnerId) : "-",
       이름: member.name,
       전화번호: formatPhone(member.phone),
       생년월일: member.birthDate || "-",
@@ -419,13 +444,14 @@ export default function GeneralCustomersPage() {
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "일반고객");
+    const partnerLabel = partnerFilter !== "all" ? `_${partnerMap.get(partnerFilter) || partnerFilter}` : "_전체";
     const dateRange = startDate || endDate
       ? `_${startDate || "시작"}~${endDate || "현재"}`
       : "";
     const statusLabel = statusFilter !== "all" ? `_${{ N: "대기중", W: "진행중", Y: "완료" }[statusFilter]}` : "";
     const regionLabel = searchRegion1 !== "all" ? `_${searchRegion1}${searchRegion2 !== "all" ? ` ${searchRegion2}` : ""}` : "";
     const buttonCheckLabel = buttonCheckFilter !== "all" ? `_${buttonCheckFilter === "1" ? "클릭" : "미클릭"}` : "";
-    XLSX.writeFile(wb, `일반고객${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}.xlsx`);
+    XLSX.writeFile(wb, `일반고객${partnerLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}.xlsx`);
   };
 
   return (
@@ -436,10 +462,11 @@ export default function GeneralCustomersPage() {
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2 max-w-sm">
+        <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="이름, 전화번호, 생년월일 검색..."
+            className="w-52"
+            placeholder="이름, 전화번호, 생년월일..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -449,13 +476,29 @@ export default function GeneralCustomersPage() {
             value={startDate}
             onChange={setStartDate}
             placeholder="시작일"
+            className="w-34"
           />
           <span className="text-muted-foreground">~</span>
           <DatePicker
             value={endDate}
             onChange={setEndDate}
             placeholder="종료일"
+            className="w-34"
           />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">파트너</span>
+          <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+            <SelectTrigger className="w-32">
+              <SelectValue placeholder="파트너" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              {partners.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">지역</span>
@@ -509,13 +552,11 @@ export default function GeneralCustomersPage() {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" onClick={handleExcelDownload} disabled={generalMembers.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          엑셀 다운로드
+        <Button variant="outline" size="icon" onClick={handleExcelDownload} disabled={generalMembers.length === 0}>
+          <Download className="h-4 w-4" />
         </Button>
-        <Button variant="outline" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-          새로고침
+        <Button variant="outline" size="icon" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
+          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
         </Button>
       </div>
 
@@ -529,6 +570,7 @@ export default function GeneralCustomersPage() {
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="w-16 text-white">번호</TableHead>
                 <TableHead className="text-white">등록일</TableHead>
+                <TableHead className="text-white">파트너</TableHead>
                 <TableHead className="text-white">이름</TableHead>
                 <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">생년월일</TableHead>
@@ -546,13 +588,13 @@ export default function GeneralCustomersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8">
+                  <TableCell colSpan={12} className="text-center py-8">
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : generalMembers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8">
+                  <TableCell colSpan={12} className="text-center py-8">
                     데이터가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -561,6 +603,7 @@ export default function GeneralCustomersPage() {
                   <TableRow key={member.idx} className="cursor-default" data-state={selectedIdx === member.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === member.idx ? null : member.idx)}>
                     <TableCell>{generalMembers.length - ((currentPage - 1) * pageSize + index)}</TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
+                    <TableCell style={{ color: "#04C6F7" }}>{member.partnerId ? (partnerMap.get(member.partnerId) || member.partnerId) : "-"}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
                     <TableCell>{formatPhone(member.phone)}</TableCell>
                     <TableCell>{member.birthDate || "-"}</TableCell>

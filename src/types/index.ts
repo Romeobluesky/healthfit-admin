@@ -81,6 +81,7 @@ export interface Member {
   Region1: string | null;
   Region2: string | null;
   buttonCheck?: number | null;
+  partnerId: string | null;
 }
 
 // 건강검진

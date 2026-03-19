@@ -17,6 +17,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Handshake } from "lucide-react";
+import { Plus, Pencil, Trash2, Handshake, Copy, Check } from "lucide-react";
 import { managerMemberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
@@ -61,7 +70,32 @@ export default function PartnersPage() {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [form, setForm] = useState<PartnerForm>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [idChecked, setIdChecked] = useState(false);
+  const [idChecking, setIdChecking] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const user = useAuthStore((s) => s.user);
+
+  const getPartnerUrl = (id: string): string | null => {
+    if (id === "admin") return null;
+    const isDev = process.env.NODE_ENV === "development";
+    const base = isDev ? "http://localhost:3000" : "https://heathfit-web.autocall.com";
+    return `${base}/?partner=${id}`;
+  };
+
+  const handleCopyUrl = async (id: string) => {
+    const url = getPartnerUrl(id);
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const showAlert = (message: string) => {
+    setAlertMessage(message);
+    setAlertOpen(true);
+  };
 
   const fetchPartners = async () => {
     try {
@@ -81,6 +115,7 @@ export default function PartnersPage() {
   const openCreateDialog = () => {
     setForm(emptyForm);
     setEditingIdx(null);
+    setIdChecked(false);
     setDialogOpen(true);
   };
 
@@ -98,7 +133,33 @@ export default function PartnersPage() {
     setDialogOpen(true);
   };
 
+  const handleCheckId = async () => {
+    if (!form.id.trim()) {
+      showAlert("아이디를 입력해주세요.");
+      return;
+    }
+    setIdChecking(true);
+    try {
+      const result = await managerMemberApi.checkId(form.id.trim());
+      if (result.duplicate) {
+        showAlert("이미 사용 중인 아이디입니다.");
+        setIdChecked(false);
+      } else {
+        showAlert("사용 가능한 아이디입니다.");
+        setIdChecked(true);
+      }
+    } catch {
+      showAlert("중복체크에 실패했습니다.");
+    } finally {
+      setIdChecking(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (!editingIdx && !idChecked) {
+      showAlert("아이디 중복체크를 해주세요.");
+      return;
+    }
     setSaving(true);
     try {
       if (editingIdx) {
@@ -111,7 +172,7 @@ export default function PartnersPage() {
       setDialogOpen(false);
       fetchPartners();
     } catch {
-      alert("저장에 실패했습니다.");
+      showAlert("저장에 실패했습니다.");
     } finally {
       setSaving(false);
     }
@@ -123,7 +184,7 @@ export default function PartnersPage() {
       await managerMemberApi.delete(idx);
       fetchPartners();
     } catch {
-      alert("삭제에 실패했습니다.");
+      showAlert("삭제에 실패했습니다.");
     }
   };
 
@@ -171,6 +232,7 @@ export default function PartnersPage() {
                 <TableHead className="text-white">아이디</TableHead>
                 <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">소속</TableHead>
+                <TableHead className="text-white">랜딩페이지 URL</TableHead>
                 <TableHead className="text-white">생성일</TableHead>
                 <TableHead className="text-white">상태</TableHead>
                 <TableHead className="w-24 text-white">관리</TableHead>
@@ -179,19 +241,19 @@ export default function PartnersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : partners.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     등록된 파트너가 없습니다.
                   </TableCell>
                 </TableRow>
               ) : (
                 partners.map((partner, index) => (
-                  <TableRow key={partner.idx} className="cursor-pointer" data-state={selectedIdx === partner.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === partner.idx ? null : partner.idx)}>
+                  <TableRow key={partner.idx} className="cursor-default" data-state={selectedIdx === partner.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === partner.idx ? null : partner.idx)}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell className="font-medium">
                       {partner.name}
@@ -199,6 +261,32 @@ export default function PartnersPage() {
                     <TableCell>{partner.id}</TableCell>
                     <TableCell>{partner.phone}</TableCell>
                     <TableCell>{partner.organization}</TableCell>
+                    <TableCell>
+                      {getPartnerUrl(partner.id) ? (
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {getPartnerUrl(partner.id)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 shrink-0 cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleCopyUrl(partner.id);
+                            }}
+                          >
+                            {copiedId === partner.id ? (
+                              <Check className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>{formatDate(partner.createdAt)}</TableCell>
                     <TableCell>
                       <span
@@ -216,6 +304,7 @@ export default function PartnersPage() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          className="cursor-pointer"
                           onClick={() => openEditDialog(partner)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -225,7 +314,7 @@ export default function PartnersPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDelete(partner.idx)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive cursor-pointer"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -249,7 +338,7 @@ export default function PartnersPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>이름</Label>
+              <Label>파트너명</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -257,11 +346,27 @@ export default function PartnersPage() {
             </div>
             <div className="space-y-2">
               <Label>아이디</Label>
-              <Input
-                value={form.id}
-                onChange={(e) => setForm({ ...form, id: e.target.value })}
-                disabled={!!editingIdx}
-              />
+              <div className="flex gap-2">
+                <Input
+                  value={form.id}
+                  onChange={(e) => {
+                    setForm({ ...form, id: e.target.value });
+                    setIdChecked(false);
+                  }}
+                  disabled={!!editingIdx}
+                />
+                {!editingIdx && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={handleCheckId}
+                    disabled={idChecking || !form.id.trim()}
+                  >
+                    {idChecking ? "확인 중..." : "중복체크"}
+                  </Button>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label>
@@ -343,6 +448,20 @@ export default function PartnersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>알림</AlertDialogTitle>
+            <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setAlertOpen(false)}>
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

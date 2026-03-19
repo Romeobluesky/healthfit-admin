@@ -38,6 +38,7 @@ export const managerMemberApi = {
   getAll: () => request<import("@/types").ManagerMember[]>("/managerMember"),
   getById: (idx: number) => request<import("@/types").ManagerMember>(`/managerMember/${idx}`),
   getByLoginId: (id: string) => request<import("@/types").ManagerMember>(`/managerMember/login/${id}`),
+  checkId: (id: string) => request<{ duplicate: boolean }>(`/managerMember/check/${id}`),
   login: (id: string, password: string) =>
     request<import("@/types").ManagerMember>(`/managerMember/login/${id}`, {
       method: "POST",
