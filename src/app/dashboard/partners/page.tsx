@@ -80,7 +80,7 @@ export default function PartnersPage() {
   const getPartnerUrl = (id: string): string | null => {
     if (id === "admin") return null;
     const isDev = process.env.NODE_ENV === "development";
-    const base = isDev ? "http://localhost:3000" : "https://heathfit-web.autocall.com";
+    const base = isDev ? "http://localhost:3000" : "https://healthfit-web.autocall.com";
     return `${base}/?partner=${id}`;
   };
 

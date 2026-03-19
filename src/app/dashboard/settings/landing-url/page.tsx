@@ -14,7 +14,7 @@ export default function LandingUrlPage() {
   const getPartnerUrl = (): string | null => {
     if (!user || !user.id || user.id === "admin") return null;
     const isDev = process.env.NODE_ENV === "development";
-    const base = isDev ? "http://localhost:3000" : "https://heathfit-web.autocall.com";
+    const base = isDev ? "http://localhost:3000" : "https://healthfit-web.autocall.com";
     return `${base}/?partner=${user.id}`;
   };
 
