@@ -338,7 +338,7 @@ export default function GeneralCustomersPage() {
 
   const partnerMap = useMemo(() => {
     const map = new Map<string, string>();
-    partners.forEach((p) => map.set(p.id, p.name));
+    partners.forEach((p) => map.set(p.id, p.organization));
     return map;
   }, [partners]);
 
@@ -495,7 +495,7 @@ export default function GeneralCustomersPage() {
             <SelectContent>
               <SelectItem value="all">전체</SelectItem>
               {partners.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
               ))}
             </SelectContent>
           </Select>

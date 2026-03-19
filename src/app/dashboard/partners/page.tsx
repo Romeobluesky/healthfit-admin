@@ -201,6 +201,14 @@ export default function PartnersPage() {
     }
   };
 
+  const formatPhone = (phone: string) => {
+    if (!phone) return "-";
+    const digits = phone.replace(/\D/g, "");
+    if (digits.length === 11) return digits.replace(/(\d{3})(\d{4})(\d{4})/, "$1-$2-$3");
+    if (digits.length === 10) return digits.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
+    return phone;
+  };
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "-";
     return new Date(dateStr).toLocaleDateString("ko-KR");
@@ -228,10 +236,10 @@ export default function PartnersPage() {
             <TableHeader className="bg-[#4a7fb5]">
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="w-16 text-white">번호</TableHead>
-                <TableHead className="text-white">파트너명</TableHead>
-                <TableHead className="text-white">아이디</TableHead>
-                <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">소속</TableHead>
+                <TableHead className="text-white">아이디</TableHead>
+                <TableHead className="text-white">담당자</TableHead>
+                <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">랜딩페이지 URL</TableHead>
                 <TableHead className="text-white">생성일</TableHead>
                 <TableHead className="text-white">상태</TableHead>
@@ -255,12 +263,12 @@ export default function PartnersPage() {
                 partners.map((partner, index) => (
                   <TableRow key={partner.idx} className="cursor-default" data-state={selectedIdx === partner.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === partner.idx ? null : partner.idx)}>
                     <TableCell>{index + 1}</TableCell>
+                    <TableCell>{partner.organization}</TableCell>
+                    <TableCell>{partner.id}</TableCell>
                     <TableCell className="font-medium">
                       {partner.name}
                     </TableCell>
-                    <TableCell>{partner.id}</TableCell>
-                    <TableCell>{partner.phone}</TableCell>
-                    <TableCell>{partner.organization}</TableCell>
+                    <TableCell>{formatPhone(partner.phone)}</TableCell>
                     <TableCell>
                       {getPartnerUrl(partner.id) ? (
                         <div className="flex items-center gap-1">
@@ -338,7 +346,7 @@ export default function PartnersPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>파트너명</Label>
+              <Label>담당자</Label>
               <Input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
