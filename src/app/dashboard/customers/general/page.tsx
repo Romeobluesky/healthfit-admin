@@ -486,20 +486,22 @@ export default function GeneralCustomersPage() {
             className="w-34"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">파트너</span>
-          <Select value={partnerFilter} onValueChange={setPartnerFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="파트너" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              {partners.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {user && isAdmin(user.permission) && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">파트너</span>
+            <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="파트너" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                {partners.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground whitespace-nowrap">지역</span>
           <Select value={searchRegion1} onValueChange={(v) => { setSearchRegion1(v); setSearchRegion2("all"); }}>

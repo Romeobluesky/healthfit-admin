@@ -23,9 +23,13 @@ import {
 import { Search, KeyRound, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download } from "lucide-react";
 import { serviceCodeApi, managerMemberApi } from "@/lib/api";
 import type { ServiceCode, ManagerMember } from "@/types";
+import { PERMISSION } from "@/types";
+import { useAuthStore } from "@/store/auth";
 import * as XLSX from "xlsx";
 
 export default function ServiceCodesPage() {
+  const user = useAuthStore((s) => s.user);
+  const isPartner = user?.permission === PERMISSION.PARTNER;
   const [codes, setCodes] = useState<ServiceCode[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [managers, setManagers] = useState<ManagerMember[]>([]);
@@ -44,7 +48,12 @@ export default function ServiceCodesPage() {
           serviceCodeApi.getAll(),
           managerMemberApi.getAll(),
         ]);
-        setCodes(codesData);
+        // 파트너 권한: 본인의 서비스코드만 표시
+        if (isPartner && user) {
+          setCodes(codesData.filter((c) => c.mb_id === user.id));
+        } else {
+          setCodes(codesData);
+        }
         setManagers(managersData.filter((m) => !m.deletedAt));
         const map: Record<string, string> = {};
         managersData.forEach((m) => {
@@ -58,7 +67,7 @@ export default function ServiceCodesPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [isPartner, user]);
 
   const getCodeFull = (c: ServiceCode) =>
     c.serviceCodeFull || `${c.serviceCodeOne}-${c.serviceCodeTwo}-${c.serviceCodeThree}`;
@@ -147,19 +156,21 @@ export default function ServiceCodesPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
-          <SelectTrigger className="w-50">
-            <SelectValue placeholder="파트너 선택" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체 파트너</SelectItem>
-            {managers.map((m) => (
-              <SelectItem key={m.idx} value={m.id}>
-                {m.name} ({m.id})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {!isPartner && (
+          <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
+            <SelectTrigger className="w-50">
+              <SelectValue placeholder="파트너 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체 파트너</SelectItem>
+              {managers.map((m) => (
+                <SelectItem key={m.idx} value={m.id}>
+                  {m.name} ({m.id})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={selectedStatus} onValueChange={setSelectedStatus}>
           <SelectTrigger className="w-35">
             <SelectValue placeholder="상태 선택" />
