@@ -155,7 +155,7 @@ export default function ReportPage({ memberIdx }: ReportPageProps) {
   return (
     <div>
       {/* 컨트롤 바 (인쇄 시 숨김) */}
-      <div className="no-print sticky top-0 z-50 flex items-center gap-4 bg-background p-4 border-b">
+      <div className="no-print sticky top-0 z-40 flex items-center gap-4 bg-background p-4 border-b">
         <Button variant="outline" size="sm" asChild>
           <Link href="/dashboard/customers">
             <ArrowLeft className="h-4 w-4 mr-2" />

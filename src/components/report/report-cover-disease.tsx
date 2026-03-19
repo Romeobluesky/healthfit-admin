@@ -23,7 +23,6 @@ export default function ReportCoverDisease({ memberName, biologicalAge }: Report
         <p style={{ margin: 0 }}>+ 당뇨병</p>
         <p style={{ margin: 0 }}>+ 심장병</p>
         <p style={{ margin: 0 }}>+ 뇌졸중</p>
-        <p style={{ margin: 0 }}>+ 치매</p>
       </div>
       <div style={{ position: "absolute", top: "440px", left: "99px", color: "#ffffff" }}>
         {memberName} 님의 생체나이는{" "}
