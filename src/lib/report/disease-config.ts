@@ -85,13 +85,13 @@ export function gradeToPoints(grade: string): number {
 
 /** Analysis에서 등급 값 가져오기 */
 export function getGradeFromAnalysis(analysis: Analysis, gradeKey: string): string {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /** eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return ((analysis as any)[gradeKey] as string) ?? "SAFE";
 }
 
 /** Analysis에서 위험도 수치 가져오기 */
 export function getRiskFromAnalysis(analysis: Analysis, riskKey: string): number {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  /** eslint-disable-next-line @typescript-eslint/no-explicit-any */
   return ((analysis as any)[riskKey] as number) ?? 0;
 }
 
