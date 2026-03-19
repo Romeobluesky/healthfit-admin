@@ -405,7 +405,7 @@ export default function CustomersPage() {
 
   const handleExcelDownload = () => {
     const excelData = healthCheckMembers.map((member, index) => ({
-      번호: index + 1,
+      번호: healthCheckMembers.length - index,
       이름: member.name,
       전화번호: formatPhone(member.phone),
       생년월일: member.birthDate || "-",
@@ -561,7 +561,7 @@ export default function CustomersPage() {
               ) : (
                 paginatedMembers.map((member, index) => (
                   <TableRow key={member.idx} className="cursor-default" data-state={selectedIdx === member.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === member.idx ? null : member.idx)}>
-                    <TableCell>{(currentPage - 1) * pageSize + index + 1}</TableCell>
+                    <TableCell>{healthCheckMembers.length - ((currentPage - 1) * pageSize + index)}</TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
                     <TableCell>{formatPhone(member.phone)}</TableCell>
