@@ -19,6 +19,7 @@ import {
   FilePlus2,
   UserPlus,
   Megaphone,
+  Link2,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
@@ -113,9 +114,19 @@ export function AppSidebar() {
     ? serviceCodeSubItems
     : serviceCodeSubItems.filter((item) => item.url === "/dashboard/service-codes");
 
+  const isPartnerUser = user ? user.permission === 8 : false;
+
   const filteredSettingsSubItems = isAdminUser
     ? settingsSubItems
-    : settingsSubItems.filter((item) => item.url === "/dashboard/settings");
+    : [
+        ...settingsSubItems.filter((item) => item.url === "/dashboard/settings"),
+        ...(isPartnerUser
+          ? [
+              { title: "랜딩페이지 URL", url: "/dashboard/settings/landing-url", icon: Link2 },
+              { title: "공지사항", url: "/dashboard/settings/notices-view", icon: Megaphone },
+            ]
+          : []),
+      ];
 
   return (
     <Sidebar>
