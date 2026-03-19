@@ -272,9 +272,6 @@ export default function PartnersPage() {
                     <TableCell>
                       {getPartnerUrl(partner.id) ? (
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {getPartnerUrl(partner.id)}
-                          </span>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -290,6 +287,9 @@ export default function PartnersPage() {
                               <Copy className="h-3 w-3" />
                             )}
                           </Button>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {getPartnerUrl(partner.id)}
+                          </span>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">-</span>
