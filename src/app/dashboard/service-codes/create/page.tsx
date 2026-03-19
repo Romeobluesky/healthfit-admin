@@ -243,9 +243,9 @@ export default function ServiceCodeCreatePage() {
                 <span>저장 중...</span>
                 <span>{saveProgress}%</span>
               </div>
-              <div className="h-2 w-full rounded-full bg-gray-200">
+              <div className="h-2 w-full rounded-xs bg-gray-200">
                 <div
-                  className="h-full rounded-full bg-[#0BDFDF] transition-all duration-150"
+                  className="h-full rounded-xs bg-[#0BDFDF] transition-all duration-150"
                   style={{ width: `${saveProgress}%` }}
                 />
               </div>

@@ -38,6 +38,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Trash2, FileText, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { memberApi, managerMemberApi, surveyApi, memoCustomerApi } from "@/lib/api";
@@ -555,12 +561,30 @@ export default function CustomersPage() {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" size="icon" onClick={handleExcelDownload} disabled={healthCheckMembers.length === 0}>
-          <Download className="h-4 w-4" />
-        </Button>
-        <Button variant="outline" size="icon" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
-          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={handleExcelDownload} disabled={healthCheckMembers.length === 0}>
+                <Download className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>엑셀 다운로드</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
+                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>새로고침</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <Card>
@@ -614,7 +638,7 @@ export default function CustomersPage() {
                     <TableCell>
                       {member.gender ? (
                         <span
-                          className="inline-flex w-10 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                          className="inline-flex w-10 items-center justify-center rounded-xs px-2.5 py-0.5 text-xs font-normal text-white"
                           style={{ backgroundColor: member.gender === 1 ? "#1964dc" : "#D457D4" }}
                         >
                           {formatGender(member.gender)}
@@ -633,7 +657,7 @@ export default function CustomersPage() {
                     </TableCell>
                     <TableCell>
                       <span
-                        className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold text-white"
+                        className="inline-flex items-center rounded-xs px-2.5 py-0.5 text-xs font-normal text-white"
                         style={{
                           backgroundColor: member.inflowPath === "web" ? "#6C74E2" : "#9E4E93",
                         }}
@@ -646,7 +670,7 @@ export default function CustomersPage() {
                         const status = member.ConsultationStatus || "N";
                         const cfg = { N: { label: "대기중", bg: "#6b7280", color: "#fff" }, W: { label: "진행중", bg: "#1e3a5f", color: "#fff" }, Y: { label: "완료", bg: "#38bdf8", color: "#000" } }[status] || { label: "대기중", bg: "#6b7280", color: "#fff" };
                         return (
-                          <span className="inline-flex w-15 items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold" style={{ backgroundColor: cfg.bg, color: cfg.color }}>
+                          <span className="inline-flex w-15 items-center justify-center rounded-xs px-2.5 py-0.5 text-xs font-normal" style={{ backgroundColor: cfg.bg, color: cfg.color }}>
                             {cfg.label}
                           </span>
                         );

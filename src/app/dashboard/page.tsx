@@ -210,7 +210,7 @@ export default function DashboardPage() {
       {/* 서버 상태 */}
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className={`h-2 w-2 rounded-full ${
+          <div className={`h-2 w-2 rounded-xs ${
             stats.serverStatus === "정상"
               ? "bg-emerald-500 animate-pulse"
               : stats.serverStatus === "확인 중..."

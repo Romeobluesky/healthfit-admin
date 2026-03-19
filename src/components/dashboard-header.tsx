@@ -34,7 +34,7 @@ export function DashboardHeader() {
               </AvatarFallback>
             </Avatar>
           ) : (
-            <div className="flex size-10 items-center justify-center rounded-full bg-white/20">
+            <div className="flex size-10 items-center justify-center rounded-xs bg-white/20">
               <User className="h-4 w-4" />
             </div>
           )}
