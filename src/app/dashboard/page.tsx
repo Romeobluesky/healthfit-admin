@@ -18,6 +18,8 @@ import {
   Legend,
 } from "recharts";
 import { memberApi, checkUpApi, serverApi } from "@/lib/api";
+import { isAdmin } from "@/lib/permission";
+import { useAuthStore } from "@/store/auth";
 import type { Member, CheckUp } from "@/types";
 
 interface DashboardStats {
@@ -40,6 +42,7 @@ const CHART_COLORS = {
 const PIE_COLORS = [CHART_COLORS.blue, CHART_COLORS.emerald, CHART_COLORS.violet, CHART_COLORS.amber, CHART_COLORS.rose, "#6366f1"];
 
 export default function DashboardPage() {
+  const user = useAuthStore((s) => s.user);
   const [stats, setStats] = useState<DashboardStats>({
     memberCount: 0,
     healthCheckMemberCount: 0,
@@ -66,10 +69,22 @@ export default function DashboardPage() {
             serverApi.getStatus(),
           ]);
 
-        const memberList =
+        const allMembers =
           members.status === "fulfilled" ? members.value : [];
-        const checkUpList =
+        const allCheckUps =
           checkUps.status === "fulfilled" ? checkUps.value : [];
+
+        // 파트너 로그인 시 본인의 고객만 필터링
+        const isPartner = user && !isAdmin(user.permission);
+        const memberList = isPartner
+          ? allMembers.filter((m) => m.partnerId === user.id)
+          : allMembers;
+        const memberIdxSet = isPartner
+          ? new Set(memberList.map((m) => m.idx))
+          : null;
+        const checkUpList = isPartner
+          ? allCheckUps.filter((c) => memberIdxSet!.has(c.memberIdx))
+          : allCheckUps;
 
         setStats({
           memberCount: memberList.length,
@@ -91,7 +106,7 @@ export default function DashboardPage() {
     }
 
     fetchStats();
-  }, []);
+  }, [user]);
 
   function buildMonthlyChart(memberList: Member[], checkUpList: CheckUp[]) {
     const now = new Date();
