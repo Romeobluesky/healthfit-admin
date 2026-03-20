@@ -159,6 +159,10 @@
     margin: 0 !important;
   }
 
+  html {
+    background: #fff !important;
+  }
+
   body {
     margin: 0;
     padding: 0;
@@ -187,15 +191,23 @@
     margin: 0;
   }
 
+  @page report-guide {
+    size: A4;
+    margin: 15mm 13mm 30mm 13mm;
+  }
+
   /* 건강리포트 안내 인쇄 스타일 */
   .report-guide {
-    padding: 13mm;
+    page: report-guide;
+    padding: 0;
+    background: #fff !important;
+    color: #000 !important;
   }
 
   .report-guide [data-slot="card"] {
     box-shadow: none !important;
     border: none !important;
-    padding-top: 15mm;
+    padding-top: 10mm;
   }
 
   .report-guide .grid {
@@ -206,7 +218,8 @@
     grid-template-columns: 1fr 1fr !important;
   }
 
-  .report-guide [data-slot="alert"] {
+  .report-guide [data-slot="alert"],
+  .report-guide .border-muted {
     break-inside: avoid;
   }
 

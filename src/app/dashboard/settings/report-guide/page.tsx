@@ -68,10 +68,20 @@ export default function ReportGuidePage() {
             document.title = "건강리포트_안내";
             const html = document.documentElement;
             const wasDark = html.classList.contains("dark");
-            if (wasDark) html.classList.remove("dark");
-            window.print();
-            if (wasDark) html.classList.add("dark");
-            document.title = originalTitle;
+            if (wasDark) {
+              html.classList.remove("dark");
+              html.style.colorScheme = "light";
+            }
+            const restore = () => {
+              if (wasDark) {
+                html.classList.add("dark");
+                html.style.colorScheme = "";
+              }
+              document.title = originalTitle;
+              window.removeEventListener("afterprint", restore);
+            };
+            window.addEventListener("afterprint", restore);
+            setTimeout(() => window.print(), 300);
           }}
         >
           <Printer className="h-4 w-4 mr-2" />
@@ -336,7 +346,7 @@ export default function ReportGuidePage() {
       </Card>
 
       {/* 4. 성별별 암종 */}
-      <Card className="print:break-before-page">
+      <Card className="mt-4 print:break-before-page">
         <CardHeader>
           <CardTitle className="text-lg">4. 성별별 암 분석 항목</CardTitle>
         </CardHeader>
@@ -376,7 +386,7 @@ export default function ReportGuidePage() {
         </CardContent>
       </Card>
       {/* 데이터 출처 및 면책 */}
-      <Card className="border-muted bg-muted/20">
+      <Card className="border-muted bg-muted/20 -mt-2 print:break-before-page">
         <CardContent className="pt-1">
           <div className="space-y-2 text-sm text-muted-foreground">
             <h4 className="font-semibold text-foreground">데이터 출처 및 안내</h4>

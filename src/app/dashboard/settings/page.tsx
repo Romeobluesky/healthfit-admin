@@ -102,14 +102,14 @@ export default function SettingsPage() {
                     </AvatarFallback>
                   </Avatar>
                 ) : (
-                  <div className="flex h-24 w-24 items-center justify-center rounded-xs ring-2 ring-border bg-muted">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full ring-2 ring-border bg-muted">
                     <User className="h-10 w-10 text-muted-foreground" />
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute inset-0 flex items-center justify-center rounded-xs bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
                 >
                   <Camera className="h-6 w-6 text-white" />
                 </button>
