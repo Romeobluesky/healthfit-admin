@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileCheck, ClipboardList, Laptop, Smartphone, LayoutDashboard } from "lucide-react";
+import { Users, FileCheck, ClipboardList, Laptop, Smartphone, LayoutDashboard, CalendarRange, MapPin, PieChart as PieChartIcon } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -18,6 +18,7 @@ import {
   Legend,
 } from "recharts";
 import { memberApi, checkUpApi, serverApi } from "@/lib/api";
+import { REGION_KEYS } from "@/lib/regions";
 import { isAdmin } from "@/lib/permission";
 import { useAuthStore } from "@/store/auth";
 import type { Member, CheckUp } from "@/types";
@@ -41,6 +42,11 @@ const CHART_COLORS = {
 
 const PIE_COLORS = [CHART_COLORS.blue, CHART_COLORS.emerald, CHART_COLORS.violet, CHART_COLORS.amber, CHART_COLORS.rose, "#6366f1"];
 
+function getYAxisUnit(maxValue: number) {
+  if (maxValue >= 1000) return { divisor: 1000, label: "천" };
+  return { divisor: 1, label: "" };
+}
+
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [stats, setStats] = useState<DashboardStats>({
@@ -56,6 +62,9 @@ export default function DashboardPage() {
     { month: string; members: number; checkUps: number }[]
   >([]);
   const [ageData, setAgeData] = useState<
+    { name: string; value: number }[]
+  >([]);
+  const [regionData, setRegionData] = useState<
     { name: string; value: number }[]
   >([]);
 
@@ -98,6 +107,7 @@ export default function DashboardPage() {
 
         buildMonthlyChart(memberList, checkUpList);
         buildAgeChart(memberList);
+        buildRegionChart(memberList);
       } catch {
         setStats((prev) => ({ ...prev, serverStatus: "오류" }));
       } finally {
@@ -153,6 +163,30 @@ export default function DashboardPage() {
       .filter(([, value]) => value > 0)
       .map(([name, value]) => ({ name, value }));
     setAgeData(data);
+  }
+
+  function buildRegionChart(memberList: Member[]) {
+    const SHORT_NAME: Record<string, string> = {
+      서울특별시: "서울", 부산광역시: "부산", 대구광역시: "대구", 인천광역시: "인천",
+      광주광역시: "광주", 대전광역시: "대전", 울산광역시: "울산", 세종특별자치시: "세종",
+      경기도: "경기", 강원특별자치도: "강원", 충청북도: "충북", 충청남도: "충남",
+      전라북도: "전북", 전라남도: "전남", 경상북도: "경북", 경상남도: "경남",
+      제주특별자치도: "제주",
+    };
+    const regionCount: Record<string, number> = {};
+    REGION_KEYS.forEach((r) => (regionCount[r] = 0));
+    memberList.forEach((m) => {
+      const region = m.Region1?.trim();
+      if (!region) return;
+      if (regionCount[region] !== undefined) {
+        regionCount[region]++;
+      }
+    });
+
+    const data = Object.entries(regionCount)
+      .map(([key, value]) => ({ name: SHORT_NAME[key] || key, value }))
+      .sort((a, b) => b.value - a.value);
+    setRegionData(data);
   }
 
   const summaryCards = [
@@ -254,22 +288,34 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* 그래프 영역 */}
-      <div className="grid gap-4 lg:grid-cols-7">
+      {/* 그래프 영역 - 1행 */}
+      <div className="grid gap-4 lg:grid-cols-3">
         {/* 월별 등록 현황 바 차트 */}
-        <Card className="lg:col-span-4 border-0 shadow-sm bg-sky-50/50 dark:bg-sky-500/40">
+        <Card className="border-0 shadow-sm bg-sky-50/50 dark:bg-sky-500/40">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">
-              월별 등록 현황
-            </CardTitle>
-            <p className="text-xs text-muted-foreground">최근 6개월 회원 및 검진 등록 추이</p>
+            <CardTitle className="flex items-center gap-1.5 text-base font-medium"><CalendarRange className="h-4 w-4" />월별 등록 현황</CardTitle>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">최근 6개월 회원 및 검진 등록 추이</p>
+              {(() => {
+                const u = getYAxisUnit(Math.max(...monthlyData.map((d) => Math.max(d.members, d.checkUps)), 0));
+                return u.label ? <span className="text-xs text-muted-foreground">(단위: {u.label})</span> : null;
+              })()}
+            </div>
           </CardHeader>
           <CardContent className="pt-2">
             {loading ? (
               <div className="h-70 animate-pulse rounded-lg bg-muted" />
             ) : (
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={monthlyData} barGap={4} barSize={20}>
+                <BarChart
+                  data={(() => {
+                    const u = getYAxisUnit(Math.max(...monthlyData.map((d) => Math.max(d.members, d.checkUps)), 0));
+                    return u.divisor > 1
+                      ? monthlyData.map((d) => ({ ...d, members: Math.round(d.members / u.divisor * 10) / 10, checkUps: Math.round(d.checkUps / u.divisor * 10) / 10 }))
+                      : monthlyData;
+                  })()}
+                  barGap={4} barSize={20} margin={{ left: -20 }}
+                >
                   <CartesianGrid
                     strokeDasharray="3 3"
                     vertical={false}
@@ -315,10 +361,80 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 성별 분포 파이 차트 */}
-        <Card className="lg:col-span-3 border-0 shadow-sm bg-rose-50/50 dark:bg-rose-500/50">
+        {/* 지역별 회원 분포 바 차트 */}
+        <Card className="border-0 shadow-sm bg-teal-50/50 dark:bg-teal-500/40">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium">나이대 분포</CardTitle>
+            <CardTitle className="flex items-center gap-1.5 text-base font-medium"><MapPin className="h-4 w-4" />지역별 회원 분포</CardTitle>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">시/도 기준 회원 분포 현황</p>
+              {(() => {
+                const u = getYAxisUnit(Math.max(...regionData.map((d) => d.value), 0));
+                return u.label ? <span className="text-xs text-muted-foreground">(단위: {u.label})</span> : null;
+              })()}
+            </div>
+          </CardHeader>
+          <CardContent className="pt-2">
+            {loading ? (
+              <div className="h-70 animate-pulse rounded-lg bg-muted" />
+            ) : regionData.length === 0 ? (
+              <div className="flex h-70 items-center justify-center text-sm text-muted-foreground">
+                데이터가 없습니다
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart
+                  data={(() => {
+                    const u = getYAxisUnit(Math.max(...regionData.map((d) => d.value), 0));
+                    return u.divisor > 1
+                      ? regionData.map((d) => ({ ...d, value: Math.round(d.value / u.divisor * 10) / 10 }))
+                      : regionData;
+                  })()}
+                  barSize={14} margin={{ left: -20 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    vertical={false}
+                    stroke="var(--color-border)"
+                    strokeOpacity={0.5}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }}
+                    interval={0}
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+                  />
+                  <Tooltip
+                    cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
+                    contentStyle={{
+                      backgroundColor: "var(--color-card)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      fontSize: "13px",
+                    }}
+                  />
+                  <Bar
+                    dataKey="value"
+                    name="회원 수"
+                    fill={CHART_COLORS.emerald}
+                    radius={[6, 6, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* 나이대 분포 파이 차트 */}
+        <Card className="border-0 shadow-sm bg-rose-50/50 dark:bg-rose-500/50">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-1.5 text-base font-medium"><PieChartIcon className="h-4 w-4" />나이대 분포</CardTitle>
             <p className="text-xs text-muted-foreground">전체 회원 나이대별 비율</p>
           </CardHeader>
           <CardContent className="pt-2">
