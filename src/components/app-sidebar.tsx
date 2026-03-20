@@ -106,9 +106,9 @@ export function AppSidebar() {
   const isServiceCodesActive = pathname.startsWith("/dashboard/service-codes");
   const isCustomersActive = pathname.startsWith("/dashboard/customers");
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
-  const [serviceCodesOpen, setServiceCodesOpen] = useState(isServiceCodesActive);
-  const [customersOpen, setCustomersOpen] = useState(isCustomersActive);
-  const [settingsOpen, setSettingsOpen] = useState(isSettingsActive);
+  const [serviceCodesOpen, setServiceCodesOpen] = useState(true);
+  const [customersOpen, setCustomersOpen] = useState(true);
+  const [settingsOpen, setSettingsOpen] = useState(true);
 
   const filteredServiceCodeSubItems = isAdminUser
     ? serviceCodeSubItems
