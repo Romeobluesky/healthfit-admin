@@ -186,4 +186,43 @@
     size: A4;
     margin: 0;
   }
+
+  /* 건강리포트 안내 인쇄 스타일 */
+  .report-guide {
+    padding: 13mm;
+  }
+
+  .report-guide [data-slot="card"] {
+    box-shadow: none !important;
+    border: none !important;
+    padding-top: 15mm;
+  }
+
+  .report-guide .grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .report-guide .grid-print-2 {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .report-guide [data-slot="alert"] {
+    break-inside: avoid;
+  }
+
+  .report-guide [data-slot="table-header"] tr {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .report-guide [data-slot="table-head"] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .report-guide [data-slot="badge"],
+  .report-guide .rounded-full[style] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

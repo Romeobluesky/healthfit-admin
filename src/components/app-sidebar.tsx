@@ -13,6 +13,7 @@ import {
   ChevronDown,
   User,
   FileText,
+  ClipboardList,
   HeartPulse,
   UserRound,
   List,
@@ -97,6 +98,11 @@ const settingsSubItems = [
     url: "/dashboard/settings/notices",
     icon: Megaphone,
   },
+  {
+    title: "건강리포트안내",
+    url: "/dashboard/settings/report-guide",
+    icon: ClipboardList,
+  },
 ];
 
 export function AppSidebar() {
@@ -119,7 +125,7 @@ export function AppSidebar() {
   const filteredSettingsSubItems = isAdminUser
     ? settingsSubItems
     : [
-        ...settingsSubItems.filter((item) => item.url === "/dashboard/settings"),
+        ...settingsSubItems.filter((item) => item.url === "/dashboard/settings" || item.url === "/dashboard/settings/report-guide"),
         ...(isPartnerUser
           ? [
               { title: "랜딩페이지 URL", url: "/dashboard/settings/landing-url", icon: Link2 },
