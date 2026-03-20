@@ -449,6 +449,7 @@ export default function GeneralCustomersPage() {
       지역2: member.Region2 || "-",
       요청버튼: buttonCheckMap.get(member.idx) === 1 ? "클릭" : "미클릭",
       유입경로: member.inflowPath === "web" ? "WEB" : "APP",
+      상담상태: { N: "대기중", W: "진행중", Y: "완료" }[member.ConsultationStatus || "N"] || "대기중",
       등록일: formatDate(member.createdAt),
     }));
 
