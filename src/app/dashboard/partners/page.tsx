@@ -298,7 +298,7 @@ export default function PartnersPage() {
                     <TableCell>{formatDate(partner.createdAt)}</TableCell>
                     <TableCell>
                       <span
-                        className="inline-flex w-15 items-center justify-center rounded-xs px-2.5 py-0.5 text-xs font-semibold"
+                        className="inline-flex w-15 items-center justify-center rounded-xs px-2.5 py-0.5 text-[11px] font-normal"
                         style={{
                           backgroundColor: statusBgColor(partner.status),
                           color: partner.status === "미승인" ? "#333" : "#fff",
