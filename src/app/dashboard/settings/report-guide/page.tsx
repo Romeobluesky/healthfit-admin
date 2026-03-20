@@ -102,7 +102,7 @@ export default function ReportGuidePage() {
 
           <Alert>
             <Info className="h-4 w-4" />
-            <AlertDescription className="text-sm">
+            <AlertDescription className="text-sm text-orange-500">
               질병 등급의 판정 기준은 <span className="font-semibold">국민건강보험공단 국가건강검진</span>의
               공식 참조 기준(정상(A), 정상(B), 질환의심)에 근거합니다.
             </AlertDescription>
@@ -239,9 +239,9 @@ export default function ReportGuidePage() {
             암종별 위험도를 산출합니다.
           </p>
 
-          <Alert variant="destructive" className="border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700 dark:bg-amber-950/10 dark:text-amber-600/50 [&>svg]:text-amber-600">
+          <Alert>
             <Info className="h-4 w-4" />
-            <AlertDescription className="text-sm">
+            <AlertDescription className="text-sm text-orange-800 dark:text-orange-500">
               암 위험도 점수는 건강검진 등급 데이터를 활용한 <span className="font-semibold">자체 분석 모델</span>로
               산출되며, 의학적 진단이 아닌 <span className="font-semibold">건강 경향 참고 지표</span>입니다.
               정확한 진단은 반드시 전문의 상담을 통해 받으시기 바랍니다.
@@ -397,7 +397,7 @@ export default function ReportGuidePage() {
               <li>암 위험도 산출: 질병 등급 기반 자체 분석 모델</li>
             </ul>
             <Separator className="my-3" />
-            <p className="text-xs">
+            <p className="text-xs text-orange-500">
               본 리포트의 암 위험도 분석은 의학적 진단을 대체하지 않으며, 건강 상태에 대한 참고 자료로만 활용하시기 바랍니다.
               정확한 건강 평가 및 진단은 의료 전문가와 상담하시기 바랍니다.
             </p>
