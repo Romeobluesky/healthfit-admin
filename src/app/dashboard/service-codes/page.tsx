@@ -128,7 +128,7 @@ export default function ServiceCodesPage() {
     if (code.mb_id && code.service_check === "Y")
       return { label: "사용중", bg: "bg-blue-500 text-white" };
     if (code.mb_id && code.service_check === "N")
-      return { label: "미사용", bg: "bg-orange-400 text-white" };
+      return { label: "미사용", bg: "bg-gray-500 text-white" };
     return { label: "활성", bg: "bg-green-500 text-white" };
   };
 
@@ -234,7 +234,7 @@ export default function ServiceCodesPage() {
                       <TableCell>{code.mb_id || "-"}</TableCell>
                       <TableCell>{code.mb_id ? (managerMap[code.mb_id] || "-") : "-"}</TableCell>
                       <TableCell>
-                        <Badge className={`w-15 justify-center ${status.bg}`}>{status.label}</Badge>
+                        <Badge className={`w-15 justify-center text-[11px] font-normal ${status.bg}`}>{status.label}</Badge>
                       </TableCell>
                       <TableCell>{formatDate(code.createdAt)}</TableCell>
                     </TableRow>
