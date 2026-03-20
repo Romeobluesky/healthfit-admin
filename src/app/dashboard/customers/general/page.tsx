@@ -43,7 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Trash2, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw } from "lucide-react";
+import { Trash2, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw, Calendar, Building2, Route, ClipboardList } from "lucide-react";
 import { memberApi, managerMemberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
@@ -116,6 +116,7 @@ export default function GeneralCustomersPage() {
   const [regionOpen, setRegionOpen] = useState(false);
   const [region1, setRegion1] = useState("");
   const [region2, setRegion2] = useState("");
+  const [inflowPathFilter, setInflowPathFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
   const [partners, setPartners] = useState<ManagerMember[]>([]);
   const pageSize = 10;
@@ -398,7 +399,12 @@ export default function GeneralCustomersPage() {
       matchesButtonCheck = buttonCheckFilter === "1" ? bc === 1 : bc === 0;
     }
 
-    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion && matchesButtonCheck;
+    let matchesInflowPath = true;
+    if (inflowPathFilter !== "all") {
+      matchesInflowPath = (m.inflowPath || "app") === inflowPathFilter;
+    }
+
+    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion && matchesButtonCheck && matchesInflowPath;
   });
 
   // 일반고객: HealthExaminationHistory !== "Y"
@@ -412,7 +418,7 @@ export default function GeneralCustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, inflowPathFilter]);
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
@@ -433,8 +439,7 @@ export default function GeneralCustomersPage() {
   };
 
   const handleExcelDownload = () => {
-    const excelData = generalMembers.map((member, index) => ({
-      번호: generalMembers.length - index,
+    const excelData = generalMembers.map((member) => ({
       파트너: member.partnerId ? (partnerMap.get(member.partnerId) || member.partnerId) : "-",
       이름: member.name,
       전화번호: formatPhone(member.phone),
@@ -457,7 +462,8 @@ export default function GeneralCustomersPage() {
     const statusLabel = statusFilter !== "all" ? `_${{ N: "대기중", W: "진행중", Y: "완료" }[statusFilter]}` : "";
     const regionLabel = searchRegion1 !== "all" ? `_${searchRegion1}${searchRegion2 !== "all" ? ` ${searchRegion2}` : ""}` : "";
     const buttonCheckLabel = buttonCheckFilter !== "all" ? `_${buttonCheckFilter === "1" ? "클릭" : "미클릭"}` : "";
-    XLSX.writeFile(wb, `일반고객${partnerLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}.xlsx`);
+    const inflowPathLabel = inflowPathFilter !== "all" ? `_${inflowPathFilter === "web" ? "WEB" : "APP"}` : "";
+    XLSX.writeFile(wb, `일반고객${partnerLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}${inflowPathLabel}.xlsx`);
   };
 
   return (
@@ -467,123 +473,146 @@ export default function GeneralCustomersPage() {
         <p className="text-muted-foreground">일반 고객 관리</p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <Search className="h-4 w-4 text-muted-foreground" />
-          <Input
-            className="w-52"
-            placeholder="이름, 전화번호, 생년월일..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <DatePicker
-            value={startDate}
-            onChange={setStartDate}
-            placeholder="시작일"
-            className="w-34"
-          />
-          <span className="text-muted-foreground">~</span>
-          <DatePicker
-            value={endDate}
-            onChange={setEndDate}
-            placeholder="종료일"
-            className="w-34"
-          />
-        </div>
-        {user && isAdmin(user.permission) && (
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">파트너</span>
-            <Select value={partnerFilter} onValueChange={setPartnerFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="파트너" />
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              className="w-52"
+              placeholder="이름, 전화번호, 생년월일..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <DatePicker
+              value={startDate}
+              onChange={setStartDate}
+              placeholder="시작일"
+              className="w-34"
+            />
+            <span className="text-muted-foreground">~</span>
+            <DatePicker
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="종료일"
+              className="w-34"
+            />
+          </div>
+          {user && isAdmin(user.permission) && (
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">파트너</span>
+              <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="파트너" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  {partners.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">지역</span>
+            <Select value={searchRegion1} onValueChange={(v) => { setSearchRegion1(v); setSearchRegion2("all"); }}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="시/도" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">전체</SelectItem>
-                {partners.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
+                {REGION_KEYS.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={searchRegion2} onValueChange={setSearchRegion2} disabled={searchRegion1 === "all"}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="시/군/구" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                {searchRegion1 !== "all" && REGIONS[searchRegion1]?.map((r) => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">지역</span>
-          <Select value={searchRegion1} onValueChange={(v) => { setSearchRegion1(v); setSearchRegion2("all"); }}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="시/도" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              {REGION_KEYS.map((r) => (
-                <SelectItem key={r} value={r}>{r}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={searchRegion2} onValueChange={setSearchRegion2} disabled={searchRegion1 === "all"}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="시/군/구" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              {searchRegion1 !== "all" && REGIONS[searchRegion1]?.map((r) => (
-                <SelectItem key={r} value={r}>{r}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">상담상태</span>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="상담상태" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              <SelectItem value="N">대기중</SelectItem>
-              <SelectItem value="W">진행중</SelectItem>
-              <SelectItem value="Y">완료</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <MousePointer2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">요청버튼</span>
+            <Select value={buttonCheckFilter} onValueChange={setButtonCheckFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="요청버튼" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="1">클릭</SelectItem>
+                <SelectItem value="0">미클릭</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Route className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">유입경로</span>
+            <Select value={inflowPathFilter} onValueChange={setInflowPathFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="유입경로" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="web">WEB</SelectItem>
+                <SelectItem value="app">APP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">상담상태</span>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="상담상태" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                <SelectItem value="N">대기중</SelectItem>
+                <SelectItem value="W">진행중</SelectItem>
+                <SelectItem value="Y">완료</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={handleExcelDownload} disabled={generalMembers.length === 0}>
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>엑셀 다운로드</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
+                  <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>새로고침</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">요청버튼</span>
-          <Select value={buttonCheckFilter} onValueChange={setButtonCheckFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="요청버튼" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">전체</SelectItem>
-              <SelectItem value="1">클릭</SelectItem>
-              <SelectItem value="0">미클릭</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={handleExcelDownload} disabled={generalMembers.length === 0}>
-                <Download className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>엑셀 다운로드</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="icon" onClick={() => fetchData(true)} disabled={refreshing || surveyModalOpen}>
-                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>새로고침</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       </div>
 
       <Card>

@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, KeyRound, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download } from "lucide-react";
+import { Search, KeyRound, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, Building2, CircleDot } from "lucide-react";
 import { serviceCodeApi, managerMemberApi } from "@/lib/api";
 import type { ServiceCode, ManagerMember } from "@/types";
 import { PERMISSION } from "@/types";
@@ -148,40 +148,50 @@ export default function ServiceCodesPage() {
         <p className="text-muted-foreground">서비스코드 발급 및 관리</p>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input
-          className="max-w-50"
-          placeholder="코드, 회원 ID 검색..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <Input
+            className="max-w-50"
+            placeholder="코드, 회원 ID 검색..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         {!isPartner && (
-          <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
-            <SelectTrigger className="w-50">
-              <SelectValue placeholder="파트너 선택" />
+          <div className="flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">파트너</span>
+            <Select value={selectedPartnerId} onValueChange={setSelectedPartnerId}>
+              <SelectTrigger className="w-50">
+                <SelectValue placeholder="파트너 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체</SelectItem>
+                {managers.map((m) => (
+                  <SelectItem key={m.idx} value={m.id}>
+                    {m.name} ({m.id})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <CircleDot className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground whitespace-nowrap">상태</span>
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-35">
+              <SelectValue placeholder="상태 선택" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">전체 파트너</SelectItem>
-              {managers.map((m) => (
-                <SelectItem key={m.idx} value={m.id}>
-                  {m.name} ({m.id})
-                </SelectItem>
-              ))}
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="활성">활성</SelectItem>
+              <SelectItem value="미사용">미사용</SelectItem>
+              <SelectItem value="사용중">사용중</SelectItem>
             </SelectContent>
           </Select>
-        )}
-        <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-          <SelectTrigger className="w-35">
-            <SelectValue placeholder="상태 선택" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체 상태</SelectItem>
-            <SelectItem value="활성">활성</SelectItem>
-            <SelectItem value="미사용">미사용</SelectItem>
-            <SelectItem value="사용중">사용중</SelectItem>
-          </SelectContent>
-        </Select>
+        </div>
         <Button
           variant="outline"
           onClick={handleExcelDownload}
@@ -197,7 +207,7 @@ export default function ServiceCodesPage() {
           <CardTitle>서비스코드 리스트</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="[&_td]:p-2">
             <TableHeader className="bg-[#4a7fb5]">
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="w-16 text-white">번호</TableHead>
