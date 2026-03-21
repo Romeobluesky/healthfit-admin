@@ -155,7 +155,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton asChild isActive={isActive}>
                       <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className="h-4 w-4 text-[#04C6F7]" />
                         <span className="text-[#04C6F7]">{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -171,7 +171,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton isActive={isCustomersActive}>
-                      <Users className="h-4 w-4" />
+                      <Users className="h-4 w-4 text-[#04C6F7]" />
                       <span className="text-[#04C6F7]">고객관리</span>
                       <ChevronDown
                         className={`ml-auto h-4 w-4 transition-transform duration-200 ${
@@ -204,7 +204,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/partners")}>
                     <Link href="/dashboard/partners">
-                      <Handshake className="h-4 w-4" />
+                      <Handshake className="h-4 w-4 text-[#04C6F7]" />
                       <span className="text-[#04C6F7]">파트너관리</span>
                     </Link>
                   </SidebarMenuButton>
@@ -219,7 +219,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton isActive={isServiceCodesActive}>
-                      <KeyRound className="h-4 w-4" />
+                      <KeyRound className="h-4 w-4 text-[#04C6F7]" />
                       <span className="text-[#04C6F7]">서비스코드관리</span>
                       <ChevronDown
                         className={`ml-auto h-4 w-4 transition-transform duration-200 ${
@@ -256,7 +256,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <CollapsibleTrigger asChild>
                     <SidebarMenuButton isActive={isSettingsActive}>
-                      <Settings className="h-4 w-4" />
+                      <Settings className="h-4 w-4 text-[#04C6F7]" />
                       <span className="text-[#04C6F7]">환경설정</span>
                       <ChevronDown
                         className={`ml-auto h-4 w-4 transition-transform duration-200 ${
