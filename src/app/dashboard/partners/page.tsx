@@ -340,18 +340,12 @@ export default function PartnersPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {editingIdx ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
               {editingIdx ? "파트너 수정" : "파트너 등록"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>담당자</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
+          <div className="space-y-4 mt-6">
             <div className="space-y-2">
               <Label>아이디</Label>
               <div className="flex gap-2">
@@ -402,6 +396,13 @@ export default function PartnersPage() {
                 onChange={(e) =>
                   setForm({ ...form, organization: e.target.value })
                 }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>담당자</Label>
+              <Input
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
