@@ -85,15 +85,12 @@ export default function DashboardPage() {
 
         // 파트너 로그인 시 본인의 고객만 필터링
         const isPartner = user && !isAdmin(user.permission);
+        const activeMembersOnly = allMembers.filter((m) => !m.deletedAt);
         const memberList = isPartner
-          ? allMembers.filter((m) => m.partnerId === user.id)
-          : allMembers;
-        const memberIdxSet = isPartner
-          ? new Set(memberList.map((m) => m.idx))
-          : null;
-        const checkUpList = isPartner
-          ? allCheckUps.filter((c) => memberIdxSet!.has(c.memberIdx))
-          : allCheckUps;
+          ? activeMembersOnly.filter((m) => m.partnerId === user.id)
+          : activeMembersOnly;
+        const memberIdxSet = new Set(memberList.map((m) => m.idx));
+        const checkUpList = allCheckUps.filter((c) => memberIdxSet.has(c.memberIdx));
 
         setStats({
           memberCount: memberList.length,
