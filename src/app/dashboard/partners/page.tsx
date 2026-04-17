@@ -40,6 +40,7 @@ import { Plus, Pencil, Trash2, Handshake, Copy, Check } from "lucide-react";
 import { managerMemberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import type { ManagerMember, ManagerStatus } from "@/types";
 
 interface PartnerForm {
@@ -50,6 +51,7 @@ interface PartnerForm {
   organization: string;
   permission: number;
   status: ManagerStatus;
+  description: string;
 }
 
 const emptyForm: PartnerForm = {
@@ -60,6 +62,7 @@ const emptyForm: PartnerForm = {
   organization: "",
   permission: 8,
   status: "미승인",
+  description: "",
 };
 
 export default function PartnersPage() {
@@ -128,6 +131,7 @@ export default function PartnersPage() {
       organization: partner.organization,
       permission: partner.permission,
       status: partner.status,
+      description: partner.description ?? "",
     });
     setEditingIdx(partner.idx);
     setDialogOpen(true);
@@ -442,6 +446,13 @@ export default function PartnersPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>소개/메모</Label>
+              <RichTextEditor
+                value={form.description}
+                onChange={(v) => setForm({ ...form, description: v })}
+              />
             </div>
           </div>
           <DialogFooter>

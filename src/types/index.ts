@@ -52,6 +52,7 @@ export interface ManagerMember {
   organization: string;
   permission: PermissionLevel;
   status: ManagerStatus;
+  description: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
