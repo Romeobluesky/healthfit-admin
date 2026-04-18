@@ -529,25 +529,25 @@ export default function GeneralCustomersPage() {
     const excelData = generalMembers.map((member) => {
       const info = getPartnerInfo(member.partnerId);
       return {
-      파트너: info.partnerName ?? "-",
-      협력사: info.partnershipName ?? "-",
-      이름: member.name,
-      전화번호: formatPhone(member.phone),
-      생년월일: member.birthDate || "-",
-      성별: member.gender ? formatGender(member.gender) : "-",
-      지역1: member.Region1 || "-",
-      지역2: member.Region2 || "-",
-      요청버튼: buttonCheckMap.get(member.idx) === 1 ? "클릭" : "미클릭",
-      유입경로: member.inflowPath === "web" ? "WEB" : "APP",
-      상담상태: { N: "대기중", W: "진행중", Y: "완료" }[member.ConsultationStatus || "N"] || "대기중",
-      등록일: formatDate(member.createdAt),
+        등록일: formatDate(member.createdAt),
+        파트너: info.partnerName ?? "-",
+        협력사: info.partnershipName ?? "-",
+        이름: member.name,
+        전화번호: formatPhone(member.phone),
+        생년월일: member.birthDate || "-",
+        성별: member.gender ? formatGender(member.gender) : "-",
+        지역1: member.Region1 || "-",
+        지역2: member.Region2 || "-",
+        요청버튼: buttonCheckMap.get(member.idx) === 1 ? "클릭" : "미클릭",
+        유입경로: member.inflowPath === "web" ? "WEB" : "APP",
+        상담상태: { N: "대기중", W: "진행중", Y: "완료" }[member.ConsultationStatus || "N"] || "대기중",
       };
     });
 
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "일반고객");
-    const partnerLabel = partnerFilter !== "all" ? `_${partnerMap.get(partnerFilter) || partnerFilter}` : "_전체";
+    const partnerLabel = partnerFilter !== "all" ? `_${partnerMap.get(partnerFilter) || partnerFilter}` : "";
     const partnershipLabel = partnershipFilter !== "all"
       ? `_${managerByIdMap.get(partnershipFilter)?.organization || partnershipFilter}`
       : "";
