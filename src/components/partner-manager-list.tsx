@@ -585,7 +585,7 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
               </div>
             )}
             <div className="space-y-2">
-              <Label>소개/메모</Label>
+              <Label>랜딩페이지 하단 정보</Label>
               <RichTextEditor
                 value={form.description}
                 onChange={(v) => setForm({ ...form, description: v })}

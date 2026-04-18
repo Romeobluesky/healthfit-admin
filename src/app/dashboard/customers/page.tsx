@@ -120,6 +120,7 @@ export default function CustomersPage() {
   const [region2, setRegion2] = useState("");
   const [inflowPathFilter, setInflowPathFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
+  const [partnershipFilter, setPartnershipFilter] = useState("all");
   const [partners, setPartners] = useState<ManagerMember[]>([]);
   const [allManagers, setAllManagers] = useState<ManagerMember[]>([]);
   const pageSize = 10;
@@ -353,6 +354,47 @@ export default function CustomersPage() {
     return map;
   }, [partners]);
 
+  // id → ManagerMember 조회 맵 (파트너/협력사 분리 표시용)
+  const managerByIdMap = useMemo(() => {
+    const map = new Map<string, ManagerMember>();
+    allManagers.forEach((m) => map.set(m.id, m));
+    return map;
+  }, [allManagers]);
+
+  // 협력사(7) 목록 — 관리자는 전체, 파트너는 본인 하부만
+  const partnershipList = useMemo(() => {
+    const all = allManagers.filter(
+      (m) => !m.deletedAt && m.permission === PERMISSION.PARTNERSHIP,
+    );
+    if (user && user.permission === PERMISSION.PARTNER) {
+      return all.filter((m) => m.partnerId === user.id);
+    }
+    if (partnerFilter !== "all") {
+      return all.filter((m) => m.partnerId === partnerFilter);
+    }
+    return all;
+  }, [allManagers, user, partnerFilter]);
+
+  // partnerId 기준으로 파트너명 / 협력사명 분리 반환
+  const getPartnerInfo = (
+    partnerId: string | null,
+  ): { partnerName: string | null; partnershipName: string | null } => {
+    if (!partnerId) return { partnerName: null, partnershipName: null };
+    const m = managerByIdMap.get(partnerId);
+    if (!m) return { partnerName: partnerId, partnershipName: null };
+    if (m.permission === PERMISSION.PARTNER) {
+      return { partnerName: m.organization, partnershipName: null };
+    }
+    if (m.permission === PERMISSION.PARTNERSHIP) {
+      const parent = m.partnerId ? managerByIdMap.get(m.partnerId) : null;
+      return {
+        partnerName: parent?.organization ?? null,
+        partnershipName: m.organization,
+      };
+    }
+    return { partnerName: null, partnershipName: null };
+  };
+
   // 로그인 사용자가 파트너(8)인 경우 본인 하부 협력사(7) id 집합
   const subPartnershipIds = useMemo(() => {
     if (!user || user.permission !== PERMISSION.PARTNER) return new Set<string>();
@@ -380,9 +422,24 @@ export default function CustomersPage() {
       }
     }
 
-    // 파트너 필터
+    // 파트너 필터: 선택한 파트너 id + 그 하위 협력사 id 모두 포함
     if (partnerFilter !== "all") {
-      if (!m.partnerId || m.partnerId !== partnerFilter) return false;
+      if (!m.partnerId) return false;
+      const selectedPartnerSubIds = allManagers
+        .filter(
+          (x) =>
+            !x.deletedAt &&
+            x.permission === PERMISSION.PARTNERSHIP &&
+            x.partnerId === partnerFilter,
+        )
+        .map((x) => x.id);
+      const validIds = new Set<string>([partnerFilter, ...selectedPartnerSubIds]);
+      if (!validIds.has(m.partnerId)) return false;
+    }
+
+    // 협력사 필터: 선택한 협력사 id 만
+    if (partnershipFilter !== "all") {
+      if (m.partnerId !== partnershipFilter) return false;
     }
 
     const matchesSearch =
@@ -443,7 +500,12 @@ export default function CustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, inflowPathFilter]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter]);
+
+  // 파트너 필터 변경 시 협력사 필터 초기화
+  useEffect(() => {
+    setPartnershipFilter("all");
+  }, [partnerFilter]);
 
   const formatGender = (gender: number) => (gender === 1 ? "남" : "여");
 
@@ -464,8 +526,11 @@ export default function CustomersPage() {
   };
 
   const handleExcelDownload = () => {
-    const excelData = healthCheckMembers.map((member) => ({
-      파트너: member.partnerId ? (partnerMap.get(member.partnerId) || member.partnerId) : "-",
+    const excelData = healthCheckMembers.map((member) => {
+      const info = getPartnerInfo(member.partnerId);
+      return {
+      파트너: info.partnerName ?? "-",
+      협력사: info.partnershipName ?? "-",
       이름: member.name,
       전화번호: formatPhone(member.phone),
       생년월일: member.birthDate || "-",
@@ -476,12 +541,16 @@ export default function CustomersPage() {
       유입경로: member.inflowPath === "web" ? "WEB" : "APP",
       상담상태: { N: "대기중", W: "진행중", Y: "완료" }[member.ConsultationStatus || "N"] || "대기중",
       등록일: formatDate(member.createdAt),
-    }));
+      };
+    });
 
     const ws = XLSX.utils.json_to_sheet(excelData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "건강검진고객");
     const partnerLabel = partnerFilter !== "all" ? `_${partnerMap.get(partnerFilter) || partnerFilter}` : "_전체";
+    const partnershipLabel = partnershipFilter !== "all"
+      ? `_${managerByIdMap.get(partnershipFilter)?.organization || partnershipFilter}`
+      : "";
     const dateRange = startDate || endDate
       ? `_${startDate || "시작"}~${endDate || "현재"}`
       : "";
@@ -489,7 +558,7 @@ export default function CustomersPage() {
     const regionLabel = searchRegion1 !== "all" ? `_${searchRegion1}${searchRegion2 !== "all" ? ` ${searchRegion2}` : ""}` : "";
     const buttonCheckLabel = buttonCheckFilter !== "all" ? `_${buttonCheckFilter === "1" ? "클릭" : "미클릭"}` : "";
     const inflowPathLabel = inflowPathFilter !== "all" ? `_${inflowPathFilter === "web" ? "WEB" : "APP"}` : "";
-    XLSX.writeFile(wb, `건강검진고객${partnerLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}${inflowPathLabel}.xlsx`);
+    XLSX.writeFile(wb, `건강검진고객${partnerLabel}${partnershipLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}${inflowPathLabel}.xlsx`);
   };
 
   return (
@@ -537,6 +606,23 @@ export default function CustomersPage() {
                 <SelectContent>
                   <SelectItem value="all">전체</SelectItem>
                   {partners.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {user && (isAdmin(user.permission) || user.permission === PERMISSION.PARTNER) && (
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">협력사</span>
+              <Select value={partnershipFilter} onValueChange={setPartnershipFilter}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="협력사" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체</SelectItem>
+                  {partnershipList.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.organization}</SelectItem>
                   ))}
                 </SelectContent>
@@ -652,6 +738,7 @@ export default function CustomersPage() {
                 <TableHead className="w-16 text-white">번호</TableHead>
                 <TableHead className="text-white">등록일</TableHead>
                 <TableHead className="text-white">파트너</TableHead>
+                <TableHead className="text-white">협력사</TableHead>
                 <TableHead className="text-white">이름</TableHead>
                 <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">생년월일</TableHead>
@@ -670,22 +757,25 @@ export default function CustomersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8">
+                  <TableCell colSpan={14} className="text-center py-8">
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : healthCheckMembers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8">
+                  <TableCell colSpan={14} className="text-center py-8">
                     데이터가 없습니다.
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedMembers.map((member, index) => (
+                paginatedMembers.map((member, index) => {
+                  const info = getPartnerInfo(member.partnerId);
+                  return (
                   <TableRow key={member.idx} className="cursor-default" data-state={selectedIdx === member.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === member.idx ? null : member.idx)}>
                     <TableCell>{healthCheckMembers.length - ((currentPage - 1) * pageSize + index)}</TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
-                    <TableCell style={{ color: "#04C6F7" }}>{member.partnerId ? (partnerMap.get(member.partnerId) || member.partnerId) : "-"}</TableCell>
+                    <TableCell style={{ color: "#04C6F7" }}>{info.partnerName ?? "-"}</TableCell>
+                    <TableCell style={{ color: "#04C6F7" }}>{info.partnershipName ?? "-"}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
                     <TableCell>{formatPhone(member.phone)}</TableCell>
                     <TableCell>{member.birthDate || "-"}</TableCell>
@@ -755,7 +845,8 @@ export default function CustomersPage() {
                       </TableCell>
                     )}
                   </TableRow>
-                ))
+                  );
+                })
               )}
             </TableBody>
           </Table>

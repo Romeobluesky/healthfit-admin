@@ -36,13 +36,17 @@ src/
 │   │   │   └── assign/page.tsx       # 서비스코드 파트너 지정
 │   │   └── settings/
 │   │       ├── page.tsx              # 내 정보
-│   │       └── clauses/page.tsx      # 약관 관리
+│   │       ├── clauses/page.tsx      # 약관 관리
+│   │       ├── notices/page.tsx      # 공지사항 등록/수정 (관리자)
+│   │       ├── notices-view/page.tsx # 공지사항 조회 (파트너)
+│   │       ├── landing-url/page.tsx  # 파트너 랜딩 URL 관리
+│   │       └── report-guide/page.tsx # 건강검진 리포트 가이드 관리
 │   └── api/proxy/[...path]/route.ts  # API 프록시 (CORS 우회)
 ├── components/
-│   ├── ui/                           # shadcn/ui 컴포넌트
+│   ├── ui/                           # shadcn/ui 컴포넌트 + rich-text-editor.tsx
 │   ├── app-sidebar.tsx               # 사이드바 네비게이션
 │   ├── auth-guard.tsx                # 인증 보호 래퍼
-│   ├── dashboard-header.tsx          # 상단 헤더
+│   ├── dashboard-header.tsx          # 상단 헤더 (실시간 시계 포함)
 │   └── report/                       # 건강검진 리포트 컴포넌트
 ├── lib/
 │   ├── api.ts                        # API 클라이언트 (모든 엔드포인트)
@@ -83,6 +87,8 @@ src/
 | cancerIncidence | `/cancerIncidence` | 암 발생률 |
 | cancerIncidenceRate | `/cancerIncidenceRate` | 암 발생 비율 |
 | memoCutomer | `/memoCutomer` | 고객 상담 메모 |
+| notice | `/notice` | 공지사항 |
+| server | `/server` | 서버 상태 확인 |
 
 ### 백엔드 서버 (별도 프로젝트)
 
@@ -247,6 +253,37 @@ ManagerMember (관리자/파트너)
 - 미등록: 빈 textarea + [등록] 버튼
 - 등록됨: 내용이 채워진 textarea + [Reset] [수정] [삭제] 버튼
 - 삭제 시 AlertDialog 모달로 확인
+
+## 리치 텍스트 에디터
+
+- 컴포넌트: `src/components/ui/rich-text-editor.tsx`
+- 네이티브 `contentEditable` API 기반 (외부 라이브러리 미사용)
+- 지원 기능: Bold, Italic, Underline, 순서/비순서 리스트
+- 사용처: 파트너 등록/수정 모달의 소개/메모(description) 필드
+- HTML 문자열로 저장되며, 렌더링 시 `dangerouslySetInnerHTML` 사용
+
+## 공지사항 (Notice)
+
+- 엔드포인트: `/notice` (CRUD)
+- 관리자 페이지: `/dashboard/settings/notices` — 등록/수정/삭제
+- 파트너 페이지: `/dashboard/settings/notices-view` — 조회 전용
+- 타입: `src/types/index.ts`의 `Notice` 인터페이스
+
+## 파트너 랜딩 URL
+
+- 경로: `/dashboard/settings/landing-url`
+- 파트너별 랜딩 페이지 URL 관리
+- 파트너 테이블에서 URL 복사 기능 제공 (복사 완료 시각적 피드백)
+
+## 건강검진 리포트 가이드
+
+- 경로: `/dashboard/settings/report-guide`
+- 리포트 해석 가이드 콘텐츠 관리
+
+## 헤더 실시간 시계
+
+- 컴포넌트: `dashboard-header.tsx`의 `SystemClock`
+- 포맷: `HH:MM:SS`, 1초 간격 업데이트
 
 ## 상담상태 (ConsultationStatus)
 
