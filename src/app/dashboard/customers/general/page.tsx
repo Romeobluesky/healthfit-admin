@@ -48,6 +48,7 @@ import { memberApi, managerMemberApi, surveyApi, memoCustomerApi } from "@/lib/a
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin } from "@/lib/permission";
+import { PERMISSION } from "@/types";
 import type { Member, ManagerMember, Survey, MemoCustomer } from "@/types";
 import { REGIONS, REGION_KEYS } from "@/lib/regions";
 import * as XLSX from "xlsx";
@@ -119,6 +120,7 @@ export default function GeneralCustomersPage() {
   const [inflowPathFilter, setInflowPathFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
   const [partners, setPartners] = useState<ManagerMember[]>([]);
+  const [allManagers, setAllManagers] = useState<ManagerMember[]>([]);
   const pageSize = 10;
   const user = useAuthStore((s) => s.user);
 
@@ -300,7 +302,8 @@ export default function GeneralCustomersPage() {
       const sorted = data.sort((a: Member, b: Member) => b.idx - a.idx);
       setMembers(sorted);
       if (Array.isArray(partnerData)) {
-        setPartners(partnerData.filter((p) => !p.deletedAt && p.permission === 8));
+        setAllManagers(partnerData);
+        setPartners(partnerData.filter((p) => !p.deletedAt && p.permission === PERMISSION.PARTNER));
       }
       try {
         const idxList = sorted.map((m) => m.idx);
@@ -349,10 +352,31 @@ export default function GeneralCustomersPage() {
     return map;
   }, [partners]);
 
+  // 로그인 사용자가 파트너(8)인 경우 본인 하부 협력사(7) id 집합
+  const subPartnershipIds = useMemo(() => {
+    if (!user || user.permission !== PERMISSION.PARTNER) return new Set<string>();
+    return new Set(
+      allManagers
+        .filter(
+          (p) =>
+            !p.deletedAt &&
+            p.permission === PERMISSION.PARTNERSHIP &&
+            p.partnerId === user.id,
+        )
+        .map((p) => p.id),
+    );
+  }, [user, allManagers]);
+
   const filteredMembers = members.filter((m) => {
-    // 파트너 로그인 시 본인의 고객만 표시
-    if (user && !isAdmin(user.permission) && m.partnerId !== user.id) {
-      return false;
+    // 관리자(9/10)는 전체, 파트너(8)는 본인+하부 협력사, 협력사(7)는 본인만
+    if (user && !isAdmin(user.permission)) {
+      if (user.permission === PERMISSION.PARTNER) {
+        const ownsDirectly = m.partnerId === user.id;
+        const ownsViaSub = m.partnerId ? subPartnershipIds.has(m.partnerId) : false;
+        if (!ownsDirectly && !ownsViaSub) return false;
+      } else if (m.partnerId !== user.id) {
+        return false;
+      }
     }
 
     // 파트너 필터

@@ -17,10 +17,11 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import { memberApi, checkUpApi, serverApi } from "@/lib/api";
+import { memberApi, checkUpApi, serverApi, managerMemberApi } from "@/lib/api";
 import { REGION_KEYS } from "@/lib/regions";
 import { isAdmin } from "@/lib/permission";
 import { useAuthStore } from "@/store/auth";
+import { PERMISSION } from "@/types";
 import type { Member, CheckUp } from "@/types";
 
 interface DashboardStats {
@@ -71,24 +72,46 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [members, checkUps, server] =
+        const needsManagers = !!user && !isAdmin(user.permission);
+        const [members, checkUps, server, managers] =
           await Promise.allSettled([
             memberApi.getAll(),
             checkUpApi.getAll(),
             serverApi.getStatus(),
+            needsManagers ? managerMemberApi.getAll() : Promise.resolve([]),
           ]);
 
         const allMembers =
           members.status === "fulfilled" ? members.value : [];
         const allCheckUps =
           checkUps.status === "fulfilled" ? checkUps.value : [];
+        const allManagers =
+          managers.status === "fulfilled" ? managers.value : [];
 
-        // 파트너 로그인 시 본인의 고객만 필터링
-        const isPartner = user && !isAdmin(user.permission);
+        // 관리자(9/10): 전체, 파트너(8): 본인+하부 협력사, 협력사(7): 본인만
         const activeMembersOnly = allMembers.filter((m) => !m.deletedAt);
-        const memberList = isPartner
-          ? activeMembersOnly.filter((m) => m.partnerId === user.id)
-          : activeMembersOnly;
+        let memberList = activeMembersOnly;
+        if (user && !isAdmin(user.permission)) {
+          if (user.permission === PERMISSION.PARTNER) {
+            const subIds = new Set(
+              (allManagers as { deletedAt: string | null; permission: number; partnerId: string | null; id: string }[])
+                .filter(
+                  (p) =>
+                    !p.deletedAt &&
+                    p.permission === PERMISSION.PARTNERSHIP &&
+                    p.partnerId === user.id,
+                )
+                .map((p) => p.id),
+            );
+            memberList = activeMembersOnly.filter(
+              (m) =>
+                m.partnerId === user.id ||
+                (m.partnerId ? subIds.has(m.partnerId) : false),
+            );
+          } else {
+            memberList = activeMembersOnly.filter((m) => m.partnerId === user.id);
+          }
+        }
         const memberIdxSet = new Set(memberList.map((m) => m.idx));
         const checkUpList = allCheckUps.filter((c) => memberIdxSet.has(c.memberIdx));
 

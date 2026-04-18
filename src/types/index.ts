@@ -3,6 +3,7 @@ export const PERMISSION = {
   SUPER_ADMIN: 10,
   ADMIN: 9,
   PARTNER: 8,
+  PARTNERSHIP: 7,
 } as const;
 
 export type PermissionLevel = (typeof PERMISSION)[keyof typeof PERMISSION];
@@ -42,7 +43,7 @@ export interface SqlError {
   sqlMessage?: string;
 }
 
-// 관리자/파트너
+// 관리자/파트너/협력사
 export interface ManagerMember {
   idx: number;
   id: string;
@@ -53,6 +54,8 @@ export interface ManagerMember {
   permission: PermissionLevel;
   status: ManagerStatus;
   description: string | null;
+  // 협력사(레벨 7)의 경우 상위 파트너(레벨 8)의 id. 그 외 레벨은 null
+  partnerId: string | null;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

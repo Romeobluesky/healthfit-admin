@@ -23,7 +23,7 @@ import {
   Link2,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
-import { isAdmin } from "@/lib/permission";
+import { isAdmin, isPartner, isPartnerOrPartnership } from "@/lib/permission";
 import {
   Sidebar,
   SidebarContent,
@@ -82,6 +82,19 @@ const customerSubItems = [
   },
 ];
 
+const partnersSubItems = [
+  {
+    title: "파트너리스트",
+    url: "/dashboard/partners",
+    icon: Handshake,
+  },
+  {
+    title: "협력사리스트",
+    url: "/dashboard/partnerships",
+    icon: Users,
+  },
+];
+
 const settingsSubItems = [
   {
     title: "내 정보",
@@ -112,15 +125,21 @@ export function AppSidebar() {
   const isServiceCodesActive = pathname.startsWith("/dashboard/service-codes");
   const isCustomersActive = pathname.startsWith("/dashboard/customers");
   const isSettingsActive = pathname.startsWith("/dashboard/settings");
+  const isPartnersActive =
+    pathname.startsWith("/dashboard/partners") ||
+    pathname.startsWith("/dashboard/partnerships");
   const [serviceCodesOpen, setServiceCodesOpen] = useState(true);
   const [customersOpen, setCustomersOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(true);
+  const [partnersOpen, setPartnersOpen] = useState(true);
 
   const filteredServiceCodeSubItems = isAdminUser
     ? serviceCodeSubItems
     : serviceCodeSubItems.filter((item) => item.url === "/dashboard/service-codes");
 
-  const isPartnerUser = user ? user.permission === 8 : false;
+  const isPartnerUser = user ? isPartnerOrPartnership(user.permission) : false;
+  const isPartnerRole = user ? isPartner(user.permission) : false;
+  const showPartnersMenu = isAdminUser || isPartnerRole;
 
   const filteredSettingsSubItems = isAdminUser
     ? settingsSubItems
@@ -200,15 +219,43 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               </Collapsible>
 
-              {isAdminUser && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={pathname.startsWith("/dashboard/partners")}>
-                    <Link href="/dashboard/partners">
-                      <Handshake className="h-4 w-4 text-[#04C6F7]" />
-                      <span className="text-[#04C6F7]">파트너관리</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              {showPartnersMenu && (
+                <Collapsible
+                  open={partnersOpen}
+                  onOpenChange={setPartnersOpen}
+                  asChild
+                >
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton isActive={isPartnersActive}>
+                        <Handshake className="h-4 w-4 text-[#04C6F7]" />
+                        <span className="text-[#04C6F7]">파트너/협력사관리</span>
+                        <ChevronDown
+                          className={`ml-auto h-4 w-4 transition-transform duration-200 ${
+                            partnersOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {partnersSubItems.map((item) => {
+                          const isSubActive = pathname === item.url;
+                          return (
+                            <SidebarMenuSubItem key={item.url}>
+                              <SidebarMenuSubButton asChild isActive={isSubActive} size="sm">
+                                <Link href={item.url}>
+                                  <item.icon className="h-4 w-4" />
+                                  <span>{item.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
               )}
 
               <Collapsible

@@ -30,6 +30,7 @@ import * as XLSX from "xlsx";
 export default function ServiceCodesPage() {
   const user = useAuthStore((s) => s.user);
   const isPartner = user?.permission === PERMISSION.PARTNER;
+  const isPartnership = user?.permission === PERMISSION.PARTNERSHIP;
   const [codes, setCodes] = useState<ServiceCode[]>([]);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [managers, setManagers] = useState<ManagerMember[]>([]);
@@ -48,8 +49,25 @@ export default function ServiceCodesPage() {
           serviceCodeApi.getAll(),
           managerMemberApi.getAll(),
         ]);
-        // 파트너 권한: 본인의 서비스코드만 표시
-        if (isPartner && user) {
+        // 파트너(8): 본인+하부 협력사, 협력사(7): 본인, 관리자: 전체
+        if (user && isPartner) {
+          const subIds = new Set(
+            managersData
+              .filter(
+                (m) =>
+                  !m.deletedAt &&
+                  m.permission === PERMISSION.PARTNERSHIP &&
+                  m.partnerId === user.id,
+              )
+              .map((m) => m.id),
+          );
+          setCodes(
+            codesData.filter(
+              (c) =>
+                c.mb_id === user.id || (c.mb_id ? subIds.has(c.mb_id) : false),
+            ),
+          );
+        } else if (user && isPartnership) {
           setCodes(codesData.filter((c) => c.mb_id === user.id));
         } else {
           setCodes(codesData);
@@ -67,7 +85,7 @@ export default function ServiceCodesPage() {
       }
     }
     fetchData();
-  }, [isPartner, user]);
+  }, [isPartner, isPartnership, user]);
 
   const getCodeFull = (c: ServiceCode) =>
     c.serviceCodeFull || `${c.serviceCodeOne}-${c.serviceCodeTwo}-${c.serviceCodeThree}`;
