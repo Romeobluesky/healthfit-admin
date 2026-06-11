@@ -54,6 +54,12 @@ export interface ManagerMember {
   permission: PermissionLevel;
   status: ManagerStatus;
   description: string | null;
+  // 랜딩페이지 배너 이미지 URL (최대 5개, 미등록 슬롯은 null)
+  imageurl1: string | null;
+  imageurl2: string | null;
+  imageurl3: string | null;
+  imageurl4: string | null;
+  imageurl5: string | null;
   // 협력사(레벨 7)의 경우 상위 파트너(레벨 8)의 id. 그 외 레벨은 null
   partnerId: string | null;
   createdAt: string;

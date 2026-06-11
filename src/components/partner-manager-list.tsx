@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Handshake, Users, Copy, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Handshake, Users, Copy, Check, ImagePlus, X, Loader2 } from "lucide-react";
 import { managerMemberApi } from "@/lib/api";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin, getPermissionLabel } from "@/lib/permission";
@@ -45,6 +45,15 @@ import { PERMISSION } from "@/types";
 import type { ManagerMember, ManagerStatus } from "@/types";
 
 export type PartnerManagerType = "partner" | "partnership";
+
+// 배너 이미지 설정
+const BANNER_SLOTS = [1, 2, 3, 4, 5];
+const ALLOWED_BANNER_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const MAX_BANNER_SIZE = 5 * 1024 * 1024; // 5MB
+// DB에는 경로(/uploads/...)만 저장되므로 미리보기 시 백엔드 도메인을 붙인다
+const BANNER_HOST = process.env.NEXT_PUBLIC_API_URL || "https://healthfit.autocallup.com";
+const toBannerSrc = (pathOrUrl: string) =>
+  pathOrUrl.startsWith("http") ? pathOrUrl : `${BANNER_HOST}${pathOrUrl}`;
 
 interface PartnerForm {
   id: string;
@@ -91,6 +100,9 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  // 배너 이미지 슬롯(1~5)의 현재 URL. 수정 모드에서만 사용
+  const [banners, setBanners] = useState<(string | null)[]>([null, null, null, null, null]);
+  const [bannerBusySlot, setBannerBusySlot] = useState<number | null>(null);
   const user = useAuthStore((s) => s.user);
 
   const isAdminUser = user ? isAdmin(user.permission) : false;
@@ -161,23 +173,78 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
     setForm(initialForm);
     setEditingIdx(null);
     setIdChecked(false);
+    setBanners([null, null, null, null, null]);
     setDialogOpen(true);
   };
 
   const openEditDialog = (partner: ManagerMember) => {
     setForm({
-      id: partner.id,
+      id: partner.id ?? "",
       password: "",
-      name: partner.name,
-      phone: partner.phone,
-      organization: partner.organization,
+      name: partner.name ?? "",
+      phone: partner.phone ?? "",
+      organization: partner.organization ?? "",
       permission: partner.permission,
       status: partner.status,
       description: partner.description ?? "",
       partnerId: partner.partnerId ?? null,
     });
+    setBanners([
+      partner.imageurl1,
+      partner.imageurl2,
+      partner.imageurl3,
+      partner.imageurl4,
+      partner.imageurl5,
+    ]);
     setEditingIdx(partner.idx);
     setDialogOpen(true);
+  };
+
+  // 배너 슬롯(1~5) 선택 → 즉시 업로드
+  const handleBannerSelect = async (slot: number, file: File) => {
+    if (!editingIdx) return;
+    if (!ALLOWED_BANNER_TYPES.includes(file.type)) {
+      showAlert("PNG, JPG, WEBP 형식만 업로드할 수 있습니다.");
+      return;
+    }
+    if (file.size > MAX_BANNER_SIZE) {
+      showAlert("이미지는 5MB 이하만 업로드할 수 있습니다.");
+      return;
+    }
+    setBannerBusySlot(slot);
+    try {
+      const res = await managerMemberApi.uploadBanner(editingIdx, slot, file);
+      setBanners((prev) => prev.map((b, i) => (i === slot - 1 ? res.url : b)));
+      // 목록 데이터도 동기화 (재조회 없이 즉시 반영)
+      setPartners((prev) =>
+        prev.map((p) =>
+          p.idx === editingIdx ? { ...p, [`imageurl${slot}`]: res.url } : p,
+        ),
+      );
+    } catch {
+      showAlert("이미지 업로드에 실패했습니다.");
+    } finally {
+      setBannerBusySlot(null);
+    }
+  };
+
+  // 배너 슬롯(1~5) 삭제
+  const handleBannerDelete = async (slot: number) => {
+    if (!editingIdx) return;
+    setBannerBusySlot(slot);
+    try {
+      await managerMemberApi.deleteBanner(editingIdx, slot);
+      setBanners((prev) => prev.map((b, i) => (i === slot - 1 ? null : b)));
+      setPartners((prev) =>
+        prev.map((p) =>
+          p.idx === editingIdx ? { ...p, [`imageurl${slot}`]: null } : p,
+        ),
+      );
+    } catch {
+      showAlert("이미지 삭제에 실패했습니다.");
+    } finally {
+      setBannerBusySlot(null);
+    }
   };
 
   const handleCheckId = async () => {
@@ -442,7 +509,7 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               {editingIdx ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
@@ -450,66 +517,70 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-6">
-            <div className="space-y-2">
-              <Label>아이디</Label>
-              <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>아이디</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={form.id}
+                    onChange={(e) => {
+                      setForm({ ...form, id: e.target.value });
+                      setIdChecked(false);
+                    }}
+                    disabled={!!editingIdx}
+                  />
+                  {!editingIdx && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0"
+                      onClick={handleCheckId}
+                      disabled={idChecking || !form.id.trim()}
+                    >
+                      {idChecking ? "확인 중..." : "중복체크"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>
+                  비밀번호{editingIdx ? " (변경 시에만 입력)" : ""}
+                </Label>
                 <Input
-                  value={form.id}
-                  onChange={(e) => {
-                    setForm({ ...form, id: e.target.value });
-                    setIdChecked(false);
-                  }}
-                  disabled={!!editingIdx}
+                  type="password"
+                  value={form.password}
+                  onChange={(e) =>
+                    setForm({ ...form, password: e.target.value })
+                  }
                 />
-                {!editingIdx && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="shrink-0"
-                    onClick={handleCheckId}
-                    disabled={idChecking || !form.id.trim()}
-                  >
-                    {idChecking ? "확인 중..." : "중복체크"}
-                  </Button>
-                )}
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>
-                비밀번호{editingIdx ? " (변경 시에만 입력)" : ""}
-              </Label>
-              <Input
-                type="password"
-                value={form.password}
-                onChange={(e) =>
-                  setForm({ ...form, password: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>전화번호</Label>
-              <Input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>소속</Label>
-              <Input
-                value={form.organization}
-                onChange={(e) =>
-                  setForm({ ...form, organization: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>담당자</Label>
-              <Input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-              />
-            </div>
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>전화번호</Label>
+                <Input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>소속</Label>
+                <Input
+                  value={form.organization}
+                  onChange={(e) =>
+                    setForm({ ...form, organization: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>담당자</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
+              </div>
               <div className="space-y-2">
                 <Label>권한</Label>
                 <Select
@@ -590,6 +661,74 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
                 value={form.description}
                 onChange={(v) => setForm({ ...form, description: v })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>랜딩페이지 배너 이미지 (최대 5개)</Label>
+              {editingIdx ? (
+                <>
+                  <div className="grid grid-cols-5 gap-2">
+                    {BANNER_SLOTS.map((slot) => {
+                      const url = banners[slot - 1];
+                      const busy = bannerBusySlot === slot;
+                      return (
+                        <div
+                          key={slot}
+                          className="relative aspect-square overflow-hidden rounded border bg-muted"
+                        >
+                          {url ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={toBannerSrc(url)}
+                                alt={`배너 ${slot}`}
+                                className="h-full w-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleBannerDelete(slot)}
+                                disabled={busy}
+                                className="absolute right-0.5 top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80 disabled:opacity-50 cursor-pointer"
+                              >
+                                {busy ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <X className="h-3 w-3" />
+                                )}
+                              </button>
+                            </>
+                          ) : (
+                            <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center text-muted-foreground hover:bg-accent">
+                              {busy ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                              ) : (
+                                <ImagePlus className="h-5 w-5" />
+                              )}
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                className="hidden"
+                                disabled={busy}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleBannerSelect(slot, file);
+                                  e.target.value = "";
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG, WEBP / 각 이미지 최대 5MB · 선택 즉시 저장됩니다.
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  배너 이미지는 저장 후 수정 화면에서 등록할 수 있습니다.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>

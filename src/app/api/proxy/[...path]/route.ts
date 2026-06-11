@@ -42,18 +42,24 @@ export async function DELETE(
 async function proxyRequest(endpoint: string, request: NextRequest) {
   const url = `${API_BASE_URL}${endpoint}`;
 
-  const headers: HeadersInit = {
-    "Content-Type": "application/json",
-  };
+  const contentType = request.headers.get("content-type") || "";
+  const isMultipart = contentType.startsWith("multipart/form-data");
 
   const init: RequestInit = {
     method: request.method,
-    headers,
   };
 
   if (request.method !== "GET" && request.method !== "HEAD") {
-    const body = await request.text();
-    if (body) init.body = body;
+    if (isMultipart) {
+      // 파일 업로드: FormData 그대로 통과 (Content-Type은 fetch가 boundary 포함해 자동 설정)
+      init.body = await request.formData();
+    } else {
+      init.headers = { "Content-Type": "application/json" };
+      const body = await request.text();
+      if (body) init.body = body;
+    }
+  } else {
+    init.headers = { "Content-Type": "application/json" };
   }
 
   try {

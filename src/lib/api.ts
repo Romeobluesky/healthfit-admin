@@ -61,6 +61,25 @@ export const managerMemberApi = {
     }),
   delete: (idx: number) =>
     request<import("@/types").SqlResult>(`/managerMember/${idx}`, { method: "DELETE" }),
+  // 배너 이미지 업로드 (multipart/form-data) — slot: 1~5
+  uploadBanner: async (idx: number, slot: number, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    // Content-Type은 브라우저가 boundary 포함하여 자동 설정 (직접 지정 금지)
+    const res = await fetch(`${API_BASE_URL}/managerMember/${idx}/banner/${slot}`, {
+      method: "POST",
+      cache: "no-store",
+      body: formData,
+    });
+    if (!res.ok) throw new Error(`Upload Error: ${res.status} ${res.statusText}`);
+    return (await res.json()) as { idx: number; slot: number; url: string };
+  },
+  // 배너 이미지 삭제 — slot: 1~5
+  deleteBanner: (idx: number, slot: number) =>
+    request<{ idx: number; slot: number; url: null }>(
+      `/managerMember/${idx}/banner/${slot}`,
+      { method: "DELETE" }
+    ),
 };
 
 // Member API
