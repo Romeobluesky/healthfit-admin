@@ -29,7 +29,8 @@ src/
 │   │   │   ├── page.tsx              # 건강검진고객 리스트
 │   │   │   ├── general/page.tsx      # 일반고객 리스트
 │   │   │   └── [idx]/report/page.tsx # 건강검진 리포트
-│   │   ├── partners/page.tsx         # 파트너(관리자) 관리
+│   │   ├── partners/page.tsx         # 파트너(레벨 8) 관리
+│   │   ├── partnerships/page.tsx     # 협력사(레벨 7) 관리
 │   │   ├── service-codes/
 │   │   │   ├── page.tsx              # 서비스코드 리스트
 │   │   │   ├── create/page.tsx       # 서비스코드 생성
@@ -47,12 +48,15 @@ src/
 │   ├── app-sidebar.tsx               # 사이드바 네비게이션
 │   ├── auth-guard.tsx                # 인증 보호 래퍼
 │   ├── dashboard-header.tsx          # 상단 헤더 (실시간 시계 포함)
+│   ├── partner-manager-list.tsx      # 파트너/협력사 관리 통합 컴포넌트 (배너 이미지 UI)
+│   ├── sw-register.tsx               # Service Worker 등록 (PWA)
 │   └── report/                       # 건강검진 리포트 컴포넌트
 ├── lib/
 │   ├── api.ts                        # API 클라이언트 (모든 엔드포인트)
 │   ├── utils.ts                      # cn() 유틸리티
 │   ├── permission.ts                 # 권한 체크 유틸리티
-│   └── report/                       # 리포트 계산 로직
+│   ├── regions.ts                    # 대한민국 시/도·시/군/구 지역 데이터
+│   └── report/                       # 리포트 계산 로직 (cancer-risk, metabolic-age, disease-config)
 ├── store/
 │   └── auth.ts                       # Zustand 인증 스토어
 ├── hooks/
@@ -89,6 +93,28 @@ src/
 | memoCutomer | `/memoCutomer` | 고객 상담 메모 |
 | notice | `/notice` | 공지사항 |
 | server | `/server` | 서버 상태 확인 |
+
+### 표준 외 주요 엔드포인트
+
+`src/lib/api.ts`에 정의된 CRUD 외 특수 메서드:
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| `managerMemberApi.checkId(id)` | `GET /managerMember/check/{id}` | 아이디 중복 체크 (`{ duplicate }`) |
+| `managerMemberApi.updateStatus(idx, status)` | `PUT /managerMember/status/{idx}` | 계정 승인 상태 변경 |
+| `managerMemberApi.uploadBanner(idx, slot, file)` | `POST /managerMember/{idx}/banner/{slot}` | 랜딩 배너 업로드 (multipart, slot 1~5) |
+| `managerMemberApi.deleteBanner(idx, slot)` | `DELETE /managerMember/{idx}/banner/{slot}` | 랜딩 배너 삭제 |
+| `memberApi.getButtonCheck(idx)` | `GET /member/{idx}/buttonCheck` | 요청 버튼 클릭 상태 조회 |
+| `memberApi.updateButtonCheck(idx, v)` | `PUT /member/{idx}/buttonCheck` | 요청 버튼 클릭 상태 변경 |
+| `checkUpApi.getAnalysis(memberIdx)` | `GET /checkUp/analysis/{memberIdx}` | 건강검진 + 분석 결과 조인 조회 |
+| `serviceCodeApi.assignPartner(mb_id, count)` | `PUT /serviceCode/assign` | 파트너 벌크 할당 |
+| `serviceCodeApi.markDownloaded(idxList)` | `PUT /serviceCode/mark-downloaded` | 다운로드 이력(`updatedAt`) 일괄 갱신 |
+| `serviceCodeApi.use(memberIdx, one, two, three)` | `PUT /serviceCode/code/{memberIdx}/{one}/{two}/{three}` | 코드 사용 처리 |
+| `memoCustomerApi.checkMembers(idxList)` | `POST /memoCutomer/checkMembers` | 메모 보유 회원 일괄 확인 |
+
+> **주의**: 배너 업로드는 `request()`를 거치지 않고 `fetch`로 직접 `FormData`를 전송한다. `Content-Type` 헤더를 직접 지정하지 않아야 브라우저가 multipart boundary를 자동 설정한다. (`src/lib/api.ts:65`)
+
+> **`request()` 동작**: 응답 본문이 비었거나 JSON 파싱 실패 시 `null` 반환. `cache: "no-store"` 고정. 서버사이드 호출 시 `NEXT_PUBLIC_API_URL`로 직접 호출.
 
 ### 백엔드 서버 (별도 프로젝트)
 
@@ -139,6 +165,30 @@ healthfit-server/
 2. Zustand 스토어에 사용자 정보 저장 (localStorage 영속화, 스토어명: `healthfit-auth`)
 3. `AuthGuard` 컴포넌트가 대시보드 라우트 보호
 4. 계정 상태가 "승인"인 경우만 로그인 가능
+
+## 파트너 / 협력사 관리
+
+- 파트너(레벨 8)와 협력사(레벨 7)는 **별도 페이지**로 분리되지만, 동일한 컴포넌트 `PartnerManagerList`를 `type` prop으로 재사용한다.
+  - `/dashboard/partners` → `<PartnerManagerList type="partner" />`
+  - `/dashboard/partnerships` → `<PartnerManagerList type="partnership" />`
+- `ManagerMember.partnerId`: 협력사(7)의 상위 파트너(8) `id`를 담는다. 그 외 레벨은 null. (협력사 ↔ 파트너 소속 관계)
+- 파트너로 로그인 시 본인 + `partnerId`가 본인인 협력사만 조회 가능 (`src/components/partner-manager-list.tsx`).
+- 등록/수정 모달에서 아이디 중복 체크(`checkId`), 리치 텍스트 소개(description) 입력, 배너 이미지 등록 제공.
+
+### 파트너 랜딩 URL 생성 규칙
+
+- 개발 환경: `http://localhost:3000/?partner={id}`
+- 배포 환경: `https://healthfit-web.autocallup.com/?partner={id}`
+- 파트너 테이블에서 복사 버튼 제공 (복사 완료 시각적 피드백 `copiedId`)
+
+### 파트너/협력사 랜딩 배너 이미지
+
+- `ManagerMember`의 `imageurl1` ~ `imageurl5` 필드 (최대 5개 슬롯, 미등록 슬롯은 null)
+- 등록/수정 모달 내 5개 슬롯 업로드/삭제 UI (`partner-manager-list.tsx`)
+- 업로드: `managerMemberApi.uploadBanner(idx, slot, file)` — multipart/form-data
+- 삭제: `managerMemberApi.deleteBanner(idx, slot)`
+- 파일 제한: PNG / JPG / WEBP, 최대 5MB
+- DB에는 경로(`/uploads/...`)가 저장되며, 미리보기는 `NEXT_PUBLIC_API_URL` + 경로로 URL 재구성
 
 ## 서비스코드 체계
 
@@ -217,11 +267,25 @@ npm run lint   # ESLint 검사
 ### 배포
 
 ```bash
-npm run deploy  # build + PM2 재시작
+npm run deploy   # build + PM2 재시작
+npm run start    # 프로덕션 실행 (포트 9003)
+npm run pm2:restart | pm2:logs | pm2:status
 ```
 
-- `output: "standalone"` 모드로 빌드
-- PM2로 프로세스 관리 (앱명: healthfit-admin)
+- `output: "standalone"` 모드로 빌드 (`next.config.ts`)
+- PM2로 프로세스 관리 (`ecosystem.config.js`, 앱명: healthfit-admin)
+  - 서버 경로: `/home/healthfit-admin`, 로그: `logs/error.log`, `logs/out.log`
+  - 메모리 제한 512M, 자동 재시작 최대 10회
+
+### 환경 변수
+
+- `NEXT_PUBLIC_API_URL` — 백엔드 서버 주소 (기본값 `https://healthfit.autocallup.com`)
+  - 브라우저: `/api/proxy`로 프록시. 서버사이드/이미지 URL 재구성: `NEXT_PUBLIC_API_URL` 직접 사용
+
+### PWA / Service Worker
+
+- `src/components/sw-register.tsx`가 앱 시작 시 `/sw.js` 서비스 워커를 등록한다 (`layout.tsx`에서 마운트).
+- `public/sw.js` 실제 파일은 git 추적 제외 상태일 수 있으니 배포 시 존재 여부 확인.
 
 ### 새 페이지 추가 시
 
@@ -256,6 +320,26 @@ ManagerMember (관리자/파트너)
               └── MemoCustomer (상담 메모) ← memberIdx로 연결
 ```
 
+### 주요 타입 메모 (`src/types/index.ts`)
+
+- `PERMISSION` 상수 + `PermissionLevel` 타입 (10/9/8/7)
+- `ManagerMember`: `imageurl1~5`(배너), `partnerId`(협력사→파트너), `status`(`승인`|`미승인`|`보류`)
+- `Member`: `inflowPath`, `Region1`/`Region2`, `buttonCheck`, `ConsultationStatus`, `partnerId`, `HealthExaminationHistory`
+- `Gender`: `1`(남) | `2`(여)
+- `SqlResult` / `SqlError`: 백엔드 mysql2 응답 형태
+- `ChatBot`: `idx, title, content, next, intro` (챗봇 시나리오용 타입 — 현재 화면 미구현, 타입만 정의됨)
+
+## 고객 리스트 (건강검진 / 일반)
+
+- 건강검진고객: `/dashboard/customers` — 검진/분석 데이터 보유 고객
+- 일반고객: `/dashboard/customers/general` — 전체 회원
+- 일반고객 페이지 필터 (`Member` 필드 기반):
+  - **지역 필터**: `Region1`(시/도) → `Region2`(시/군/구) 2단계. 데이터 소스 `src/lib/regions.ts`의 `REGIONS` / `REGION_KEYS`
+  - **유입경로 필터**: `inflowPath` (예: Web / App)
+  - **요청 버튼 필터**: `buttonCheck` (클릭/미클릭)
+  - **파트너/협력사 필터**: `partnerId` 기준 분리 표시
+- 엑셀 다운로드 지원
+
 ## 건강검진 리포트
 
 - 경로: `/dashboard/customers/{idx}/report`
@@ -264,6 +348,13 @@ ManagerMember (관리자/파트너)
 - 등급 체계: 안전(SAFE), 주의(CAUTION), 경고(WARNING), 위험(DANGER)
 - 생체나이 계산: `src/lib/report/metabolic-age.ts`
 - 암 위험도 계산: `src/lib/report/cancer-risk.ts`
+- 질병/등급 설정 및 유틸: `src/lib/report/disease-config.ts`
+  - `DISEASE_LIST` (6대 질병 정의), `GRADE_COLORS`
+  - `gradeToKorean()`, `gradeToPoints()` (SAFE/CAUTION/WARNING/DANGER → 점수)
+  - `getGradeFromAnalysis()`, `getRiskFromAnalysis()` (Analysis 필드 추출)
+  - `getCancerList(gender)` (성별별 암 목록)
+  - `getAgeGroup()`, `getAgeDecade()` (나이 → 연령대 키/문자열)
+  - `removeSpecialChar()` (등록번호 생성용)
 
 ## 고객 상담 메모
 

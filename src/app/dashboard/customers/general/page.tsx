@@ -11,6 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -95,6 +96,9 @@ export default function GeneralCustomersPage() {
   const [searchRegion1, setSearchRegion1] = useState("all");
   const [searchRegion2, setSearchRegion2] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [surveyModalOpen, setSurveyModalOpen] = useState(false);
   const [surveyData, setSurveyData] = useState<Survey[] | null>(null);
   const [surveyLoading, setSurveyLoading] = useState(false);
@@ -342,8 +346,39 @@ export default function GeneralCustomersPage() {
     try {
       await memberApi.delete(idx);
       setMembers((prev) => prev.filter((m) => m.idx !== idx));
+      setSelectedRows((prev) => { const next = new Set(prev); next.delete(idx); return next; });
     } catch {
       alert("삭제에 실패했습니다.");
+    }
+  };
+
+  const toggleSelectRow = (idx: number, checked: boolean) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(idx);
+      else next.delete(idx);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    const idxList = Array.from(selectedRows);
+    if (idxList.length === 0) return;
+    setBulkDeleteOpen(false);
+    setBulkDeleting(true);
+    try {
+      const results = await Promise.allSettled(idxList.map((idx) => memberApi.delete(idx)));
+      const deleted = new Set<number>();
+      results.forEach((r, i) => { if (r.status === "fulfilled") deleted.add(idxList[i]); });
+      setMembers((prev) => prev.filter((m) => !deleted.has(m.idx)));
+      setSelectedRows((prev) => { const next = new Set(prev); deleted.forEach((idx) => next.delete(idx)); return next; });
+      if (deleted.size < idxList.length) {
+        alert(`${idxList.length}건 중 ${deleted.size}건이 삭제되었습니다.`);
+      }
+    } catch {
+      alert("선택 삭제에 실패했습니다.");
+    } finally {
+      setBulkDeleting(false);
     }
   };
 
@@ -498,8 +533,31 @@ export default function GeneralCustomersPage() {
     return generalMembers.slice(start, start + pageSize);
   }, [generalMembers, currentPage]);
 
+  const isAdminUser = !!user && isAdmin(user.permission);
+  const colCount = 13 + (isAdminUser ? 2 : 0);
+
+  // 현재 페이지 전체선택 상태
+  const allPageSelected =
+    paginatedMembers.length > 0 && paginatedMembers.every((m) => selectedRows.has(m.idx));
+
+  const toggleSelectAllPage = (checked: boolean) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      paginatedMembers.forEach((m) => {
+        if (checked) next.add(m.idx);
+        else next.delete(m.idx);
+      });
+      return next;
+    });
+  };
+
   useEffect(() => {
     setCurrentPage(1);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter]);
+
+  // 필터 변경 시 선택 초기화
+  useEffect(() => {
+    setSelectedRows(new Set());
   }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter]);
 
   // 파트너 필터 변경 시 협력사 필터 초기화 (상위가 바뀌면 하위 옵션이 달라짐)
@@ -729,12 +787,39 @@ export default function GeneralCustomersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>일반고객 리스트 ({generalMembers.length})</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>일반고객 리스트 ({generalMembers.length})</CardTitle>
+            {isAdminUser && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkDeleteOpen(true)}
+                disabled={selectedRows.size === 0 || bulkDeleting}
+              >
+                {bulkDeleting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
+                선택삭제{selectedRows.size > 0 ? ` (${selectedRows.size})` : ""}
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader className="bg-[#4a7fb5]">
               <TableRow className="border-none hover:bg-transparent">
+                {isAdminUser && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#4a7fb5] data-[state=checked]:border-white"
+                      checked={allPageSelected}
+                      onCheckedChange={(v) => toggleSelectAllPage(v === true)}
+                      aria-label="현재 페이지 전체선택"
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="w-16 text-white">번호</TableHead>
                 <TableHead className="text-white">등록일</TableHead>
                 <TableHead className="text-white">파트너</TableHead>
@@ -756,13 +841,13 @@ export default function GeneralCustomersPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8">
+                  <TableCell colSpan={colCount} className="text-center py-8">
                     데이터를 불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : generalMembers.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={13} className="text-center py-8">
+                  <TableCell colSpan={colCount} className="text-center py-8">
                     데이터가 없습니다.
                   </TableCell>
                 </TableRow>
@@ -771,6 +856,15 @@ export default function GeneralCustomersPage() {
                   const info = getPartnerInfo(member.partnerId);
                   return (
                   <TableRow key={member.idx} className="cursor-default" data-state={selectedIdx === member.idx ? "selected" : undefined} onClick={() => setSelectedIdx(selectedIdx === member.idx ? null : member.idx)}>
+                    {isAdminUser && (
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedRows.has(member.idx)}
+                          onCheckedChange={(v) => toggleSelectRow(member.idx, v === true)}
+                          aria-label={`${member.name} 선택`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell>{generalMembers.length - ((currentPage - 1) * pageSize + index)}</TableCell>
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell style={{ color: "#04C6F7" }}>{info.partnerName ?? "-"}</TableCell>
@@ -1117,6 +1211,23 @@ export default function GeneralCustomersPage() {
             <AlertDialogAction onClick={confirmConsultationStatusChange}>
               확인
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>선택 고객 삭제</AlertDialogTitle>
+            <AlertDialogDescription>
+              선택한 {selectedRows.size}건의 고객을 삭제하시겠습니까? 삭제된 내용은 복구할 수 없습니다.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleBulkDelete} className="bg-red-500 text-white hover:bg-red-600">
+              삭제
+            </AlertDialogAction>
+            <AlertDialogCancel>취소</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
