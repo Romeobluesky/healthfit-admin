@@ -53,36 +53,10 @@ import { isAdmin } from "@/lib/permission";
 import { PERMISSION } from "@/types";
 import type { Member, ManagerMember, Survey, MemoCustomer } from "@/types";
 import { REGIONS, REGION_KEYS } from "@/lib/regions";
+import { SMOKING_LABELS, DRINK_LABELS, EXERCISE_LABELS, LIFE_LABELS } from "@/lib/survey-labels";
 import * as XLSX from "xlsx";
 
 type SelectedIdx = number | null;
-
-const SMOKING_LABELS: Record<number, string> = {
-  0: "비흡연",
-  1: "과거 흡연 (금연 중)",
-  2: "현재 흡연 (하루 10개비 미만)",
-  4: "현재 흡연 (하루 10개비 이상)",
-};
-
-const DRINK_LABELS: Record<number, string> = {
-  0: "마시지 않음",
-  1: "주 1~2회",
-  2: "주 3~4회",
-  3: "주 5회 이상",
-};
-
-const EXERCISE_LABELS: Record<number, string> = {
-  1: "거의 하지 않음",
-  0: "주 1~2회",
-  [-2]: "주 3~4회",
-  [-3]: "주 5회 이상",
-};
-
-const LIFE_LABELS: Record<number, string> = {
-  1: "거의 하지 않음",
-  [-1]: "주 1~2회",
-  [-2]: "주 3회 이상",
-};
 
 export default function CustomersPage() {
   const [members, setMembers] = useState<Member[]>([]);
