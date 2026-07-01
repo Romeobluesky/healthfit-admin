@@ -7,20 +7,20 @@
 
 export const SMOKING_LABELS: Record<number, string> = {
   0: "비흡연",
-  1: "과거 흡연",
-  2: "현재 흡연", // 과거 데이터 → 통합 라벨
-  4: "현재 흡연",
+  1: "흡연",
+  2: "금연중", // 과거 데이터 → 통합 라벨
+  4: "금연중",
 };
 
 export const DRINK_LABELS: Record<number, string> = {
-  0: "마시지 않음",
+  0: "안 함",
   1: "주 1~2회",
   2: "주 3회 이상", // 과거 데이터 → 통합 라벨
   3: "주 3회 이상",
 };
 
 export const EXERCISE_LABELS: Record<number, string> = {
-  1: "거의 하지 않음",
+  1: "안 함",
   0: "주 1~2회",
   [-2]: "주 3회 이상", // 과거 데이터 → 통합 라벨
   [-3]: "주 3회 이상",
@@ -28,7 +28,7 @@ export const EXERCISE_LABELS: Record<number, string> = {
 
 // 근력운동 — 변경 없음
 export const LIFE_LABELS: Record<number, string> = {
-  1: "거의 하지 않음",
+  1: "안 함",
   [-1]: "주 1~2회",
   [-2]: "주 3회 이상",
 };
