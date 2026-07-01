@@ -7,7 +7,7 @@
 
 export const SMOKING_LABELS: Record<number, string> = {
   0: "비흡연",
-  1: "과거 흡연 (금연 중)",
+  1: "과거 흡연",
   2: "현재 흡연", // 과거 데이터 → 통합 라벨
   4: "현재 흡연",
 };
