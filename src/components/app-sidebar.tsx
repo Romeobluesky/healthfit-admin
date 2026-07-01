@@ -21,6 +21,7 @@ import {
   UserPlus,
   Megaphone,
   Link2,
+  Trash2,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { isAdmin, isPartner, isPartnerOrPartnership } from "@/lib/permission";
@@ -80,6 +81,12 @@ const customerSubItems = [
     url: "/dashboard/customers/general",
     icon: UserRound,
   },
+  {
+    title: "삭제회원",
+    url: "/dashboard/customers/deleted",
+    icon: Trash2,
+    adminOnly: true,
+  },
 ];
 
 const partnersSubItems = [
@@ -132,6 +139,10 @@ export function AppSidebar() {
   const [customersOpen, setCustomersOpen] = useState(true);
   const [settingsOpen, setSettingsOpen] = useState(true);
   const [partnersOpen, setPartnersOpen] = useState(true);
+
+  const filteredCustomerSubItems = customerSubItems.filter(
+    (item) => !item.adminOnly || isAdminUser,
+  );
 
   const filteredServiceCodeSubItems = isAdminUser
     ? serviceCodeSubItems
@@ -201,7 +212,7 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <SidebarMenuSub>
-                      {customerSubItems.map((item) => {
+                      {filteredCustomerSubItems.map((item) => {
                         const isSubActive = pathname === item.url;
                         return (
                           <SidebarMenuSubItem key={item.url}>

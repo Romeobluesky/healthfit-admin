@@ -98,6 +98,9 @@ export const memberApi = {
     }),
   delete: (idx: number) =>
     request<import("@/types").SqlResult>(`/member/${idx}`, { method: "DELETE" }),
+  // 완전삭제(하드딜리트): member + analysis/checkUp/survey 물리 삭제. 복구 불가
+  permanentDelete: (idx: number) =>
+    request<import("@/types").SqlResult>(`/member/${idx}/permanent`, { method: "DELETE" }),
   updateConsultationStatus: (idx: number, status: string) =>
     request<import("@/types").SqlResult>(`/member/${idx}/consultationStatus`, {
       method: "PUT",
