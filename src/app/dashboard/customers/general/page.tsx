@@ -972,8 +972,9 @@ export default function GeneralCustomersPage() {
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : !surveyData || surveyData.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">설문 데이터가 없습니다.</p>
+            <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-6">
+              <p className="text-muted-foreground">설문 진행 중 간편인증 단계에서 고객 변심으로 취소되어 저장된 설문 내용이 없습니다.</p>
+              <p className="text-sm text-muted-foreground">회원가입은 완료되었으나 설문이 완료되지 않은 고객입니다.</p>
             </div>
           ) : (
             <div className="space-y-6">
