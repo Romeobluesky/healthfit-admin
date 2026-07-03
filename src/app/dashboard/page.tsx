@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, FileCheck, ClipboardList, Laptop, Smartphone, LayoutDashboard, CalendarRange, MapPin, PieChart as PieChartIcon } from "lucide-react";
+import { Users, FileCheck, ClipboardList, Laptop, Smartphone, LayoutDashboard, CalendarRange, MapPin, PieChart as PieChartIcon, Maximize2 } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -17,12 +17,51 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { memberApi, checkUpApi, serverApi, managerMemberApi } from "@/lib/api";
 import { REGION_KEYS } from "@/lib/regions";
 import { isAdmin } from "@/lib/permission";
 import { useAuthStore } from "@/store/auth";
 import { PERMISSION } from "@/types";
 import type { Member, CheckUp } from "@/types";
+
+type MonthlyPoint = { month: string; members: number; general: number; checkUps: number };
+
+// 특정 연월(YYYY-MM)의 등록 수 집계. 회원 등록 = 일반 등록 + 검진 등록 → 일반 등록은 차집합.
+function countRegistrations(memberList: Member[], checkUpList: CheckUp[], yearMonth: string) {
+  const memberCount = memberList.filter((m) => m.createdAt?.startsWith(yearMonth)).length;
+  const checkUpCount = new Set(
+    checkUpList
+      .filter((c) => c.createdAt?.startsWith(yearMonth))
+      .map((c) => c.memberIdx)
+  ).size;
+  const generalCount = Math.max(memberCount - checkUpCount, 0);
+  return { members: memberCount, general: generalCount, checkUps: checkUpCount };
+}
+
+// 최근 count개월(이번 달 포함, 역순) 추이
+function buildMonthlyData(memberList: Member[], checkUpList: CheckUp[], count: number): MonthlyPoint[] {
+  const now = new Date();
+  const months: MonthlyPoint[] = [];
+
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    months.push({ month: `${d.getMonth() + 1}월`, ...countRegistrations(memberList, checkUpList, yearMonth) });
+  }
+  return months;
+}
+
+// 지정 연도의 1월 ~ 12월 추이
+function buildYearlyData(memberList: Member[], checkUpList: CheckUp[], year: number): MonthlyPoint[] {
+  const months: MonthlyPoint[] = [];
+
+  for (let m = 1; m <= 12; m++) {
+    const yearMonth = `${year}-${String(m).padStart(2, "0")}`;
+    months.push({ month: `${m}월`, ...countRegistrations(memberList, checkUpList, yearMonth) });
+  }
+  return months;
+}
 
 interface DashboardStats {
   memberCount: number;
@@ -48,6 +87,118 @@ function getYAxisUnit(maxValue: number) {
   return { divisor: 1, label: "" };
 }
 
+function MonthlyTooltip({
+  active,
+  payload,
+  unitLabel,
+}: {
+  active?: boolean;
+  payload?: { payload: { month: string; members: number; general: number; checkUps: number } }[];
+  unitLabel?: string;
+}) {
+  if (!active || !payload || payload.length === 0) return null;
+  const d = payload[0].payload;
+  const suffix = unitLabel ? ` ${unitLabel}` : "";
+  return (
+    <div
+      style={{
+        backgroundColor: "var(--color-card)",
+        border: "1px solid var(--color-border)",
+        borderRadius: "8px",
+        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+        fontSize: "13px",
+        padding: "8px 12px",
+        color: "var(--color-foreground)",
+      }}
+    >
+      <p style={{ marginBottom: 6, fontWeight: 500 }}>{d.month}</p>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: CHART_COLORS.emerald, display: "inline-block" }} />
+        <span>검진 등록 : {d.checkUps}{suffix}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 9999, backgroundColor: CHART_COLORS.blue, display: "inline-block" }} />
+        <span>일반 등록 : {d.general}{suffix}</span>
+      </div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          marginTop: 4,
+          paddingTop: 4,
+          borderTop: "1px solid var(--color-border)",
+          fontWeight: 600,
+        }}
+      >
+        <span style={{ width: 8, height: 8, display: "inline-block" }} />
+        <span>회원 등록 : {d.members}{suffix}</span>
+      </div>
+    </div>
+  );
+}
+
+function MonthlyStackedChart({ data, height = 280 }: { data: MonthlyPoint[]; height?: number }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+
+  useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+    setWidth(el.getBoundingClientRect().width);
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width ?? 0;
+      if (w > 0) setWidth(w);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const u = getYAxisUnit(Math.max(...data.map((d) => d.members), 0));
+  const chartData =
+    u.divisor > 1
+      ? data.map((d) => ({
+          ...d,
+          members: Math.round((d.members / u.divisor) * 10) / 10,
+          general: Math.round((d.general / u.divisor) * 10) / 10,
+          checkUps: Math.round((d.checkUps / u.divisor) * 10) / 10,
+        }))
+      : data;
+
+  return (
+    <div ref={wrapperRef} className="w-full" style={{ height }}>
+      {width > 0 && (
+        <BarChart width={width} height={height} data={chartData} barSize={22} margin={{ left: -20 }}>
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="var(--color-border)"
+            strokeOpacity={0.5}
+          />
+          <XAxis
+            dataKey="month"
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+            interval={0}
+          />
+          <YAxis
+            axisLine={false}
+            tickLine={false}
+            tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
+          />
+          <Tooltip
+            cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
+            content={<MonthlyTooltip unitLabel={u.label} />}
+          />
+          <Bar dataKey="general" name="일반 등록" stackId="reg" fill={CHART_COLORS.blue} radius={[0, 0, 0, 0]} />
+          <Bar dataKey="checkUps" name="검진 등록" stackId="reg" fill={CHART_COLORS.emerald} radius={[6, 6, 0, 0]} />
+        </BarChart>
+      )}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const user = useAuthStore((s) => s.user);
   const [stats, setStats] = useState<DashboardStats>({
@@ -59,9 +210,10 @@ export default function DashboardPage() {
     serverStatus: "확인 중...",
   });
   const [loading, setLoading] = useState(true);
-  const [monthlyData, setMonthlyData] = useState<
-    { month: string; members: number; checkUps: number }[]
-  >([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyPoint[]>([]);
+  const [yearlyData, setYearlyData] = useState<MonthlyPoint[]>([]);
+  const [yearLabel, setYearLabel] = useState<number | null>(null);
+  const [yearOpen, setYearOpen] = useState(false);
   const [ageData, setAgeData] = useState<
     { name: string; value: number }[]
   >([]);
@@ -125,7 +277,10 @@ export default function DashboardPage() {
             server.status === "fulfilled" ? "정상" : "연결 실패",
         });
 
-        buildMonthlyChart(memberList, checkUpList);
+        const currentYear = new Date().getFullYear();
+        setMonthlyData(buildMonthlyData(memberList, checkUpList, 6));
+        setYearlyData(buildYearlyData(memberList, checkUpList, currentYear));
+        setYearLabel(currentYear);
         buildAgeChart(memberList);
         buildRegionChart(memberList);
       } catch {
@@ -137,29 +292,6 @@ export default function DashboardPage() {
 
     fetchStats();
   }, [user]);
-
-  function buildMonthlyChart(memberList: Member[], checkUpList: CheckUp[]) {
-    const now = new Date();
-    const months: { month: string; members: number; checkUps: number }[] = [];
-
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const label = `${d.getMonth() + 1}월`;
-
-      const memberCount = memberList.filter((m) =>
-        m.createdAt?.startsWith(yearMonth)
-      ).length;
-      const checkUpCount = new Set(
-        checkUpList
-          .filter((c) => c.createdAt?.startsWith(yearMonth))
-          .map((c) => c.memberIdx)
-      ).size;
-
-      months.push({ month: label, members: memberCount, checkUps: checkUpCount });
-    }
-    setMonthlyData(months);
-  }
 
   function buildAgeChart(memberList: Member[]) {
     const now = new Date();
@@ -313,11 +445,21 @@ export default function DashboardPage() {
         {/* 월별 등록 현황 바 차트 */}
         <Card className="border-0 shadow-sm bg-sky-50/50 dark:bg-sky-500/40">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-1.5 text-base font-medium"><CalendarRange className="h-4 w-4" />월별 등록 현황</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle className="flex items-center gap-1.5 text-base font-medium"><CalendarRange className="h-4 w-4" />월별 등록 현황</CardTitle>
+              <button
+                type="button"
+                onClick={() => setYearOpen(true)}
+                className="flex items-center gap-1 rounded-md border border-[#0BDFDF]/50 bg-[#0BDFDF]/10 px-2.5 py-1 text-xs font-medium text-[#0a9c9c] transition-colors hover:bg-[#0BDFDF]/20 dark:text-[#0BDFDF]"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+                1년 보기
+              </button>
+            </div>
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">최근 6개월 회원 및 검진 등록 추이</p>
               {(() => {
-                const u = getYAxisUnit(Math.max(...monthlyData.map((d) => Math.max(d.members, d.checkUps)), 0));
+                const u = getYAxisUnit(Math.max(...monthlyData.map((d) => d.members), 0));
                 return u.label ? <span className="text-xs text-muted-foreground">(단위: {u.label})</span> : null;
               })()}
             </div>
@@ -326,57 +468,7 @@ export default function DashboardPage() {
             {loading ? (
               <div className="h-70 animate-pulse rounded-lg bg-muted" />
             ) : (
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart
-                  data={(() => {
-                    const u = getYAxisUnit(Math.max(...monthlyData.map((d) => Math.max(d.members, d.checkUps)), 0));
-                    return u.divisor > 1
-                      ? monthlyData.map((d) => ({ ...d, members: Math.round(d.members / u.divisor * 10) / 10, checkUps: Math.round(d.checkUps / u.divisor * 10) / 10 }))
-                      : monthlyData;
-                  })()}
-                  barGap={4} barSize={20} margin={{ left: -20 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="var(--color-border)"
-                    strokeOpacity={0.5}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: "var(--color-muted-foreground)" }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "var(--color-muted)", opacity: 0.3 }}
-                    contentStyle={{
-                      backgroundColor: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                      fontSize: "13px",
-                    }}
-                  />
-                  <Bar
-                    dataKey="members"
-                    name="회원 등록"
-                    fill={CHART_COLORS.blue}
-                    radius={[6, 6, 0, 0]}
-                  />
-                  <Bar
-                    dataKey="checkUps"
-                    name="검진 등록"
-                    fill={CHART_COLORS.emerald}
-                    radius={[6, 6, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              <MonthlyStackedChart data={monthlyData} height={280} />
             )}
           </CardContent>
         </Card>
@@ -528,6 +620,34 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 월별 등록 현황 1년치 모달 */}
+      <Dialog open={yearOpen} onOpenChange={setYearOpen}>
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-1.5">
+              <CalendarRange className="h-5 w-5" />월별 등록 현황 {yearLabel ? `(${yearLabel}년)` : ""}
+            </DialogTitle>
+            <DialogDescription>{yearLabel ? `${yearLabel}년 ` : ""}1월 ~ 12월 회원 및 검진 등록 추이</DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS.blue }} />일반 등록
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CHART_COLORS.emerald }} />검진 등록
+              </span>
+              <span className="text-muted-foreground/80">누적 높이 = 회원 등록</span>
+            </div>
+            {(() => {
+              const u = getYAxisUnit(Math.max(...yearlyData.map((d) => d.members), 0));
+              return u.label ? <span className="text-xs text-muted-foreground">(단위: {u.label})</span> : null;
+            })()}
+          </div>
+          <MonthlyStackedChart data={yearlyData} height={360} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

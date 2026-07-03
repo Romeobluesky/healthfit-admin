@@ -168,7 +168,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4 bg-[#1e3a5f] text-white">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <Image src="/icon.png" alt="HealthFit" width={28} height={28} />
+          <Image src="/icon.png" alt="HealthFit" width={28} height={28} className="h-7 w-7 shrink-0" />
           <span className="text-lg font-bold">HealthFit</span>
         </Link>
       </SidebarHeader>

@@ -50,7 +50,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2">
-              <Image src="/icon.png" alt="HealthFIT 아이콘" width={32} height={32} />
+              <Image src="/icon.png" alt="HealthFIT 아이콘" width={32} height={32} className="h-8 w-8 shrink-0" />
               <CardTitle className="text-2xl font-bold">건강예보</CardTitle>
             </div>
           <p className="text-sm text-muted-foreground">Healthfit Administrator</p>
