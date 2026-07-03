@@ -53,6 +53,7 @@ import { PERMISSION } from "@/types";
 import type { Member, ManagerMember, Survey, MemoCustomer } from "@/types";
 import { REGIONS, REGION_KEYS } from "@/lib/regions";
 import { SMOKING_LABELS, DRINK_LABELS, EXERCISE_LABELS, LIFE_LABELS } from "@/lib/survey-labels";
+import SurveyManualEntry from "@/components/survey-manual-entry";
 import * as XLSX from "xlsx";
 
 type SelectedIdx = number | null;
@@ -78,6 +79,8 @@ export default function GeneralCustomersPage() {
   const [surveyLoading, setSurveyLoading] = useState(false);
   const [surveyMemberName, setSurveyMemberName] = useState("");
   const [surveyMemberIdx, setSurveyMemberIdx] = useState<number | null>(null);
+  const [surveyMemberBirth, setSurveyMemberBirth] = useState<string>("");
+  const [surveyEditing, setSurveyEditing] = useState(false);
   const [memo, setMemo] = useState<MemoCustomer | null>(null);
   const [memoContent, setMemoContent] = useState("");
   const [memoLoading, setMemoLoading] = useState(false);
@@ -147,6 +150,8 @@ export default function GeneralCustomersPage() {
     setSurveyLoading(true);
     setSurveyMemberName(member.name);
     setSurveyMemberIdx(member.idx);
+    setSurveyMemberBirth(member.birthDate || "");
+    setSurveyEditing(false);
     setSurveyData(null);
     setMemo(null);
     setMemoContent("");
@@ -953,7 +958,12 @@ export default function GeneralCustomersPage() {
             </div>
           )}
           <DialogHeader className="cursor-move select-none" onMouseDown={handleDragStart}>
-            <DialogTitle>{surveyMemberName}님의 설문결과</DialogTitle>
+            <DialogTitle>
+              {surveyMemberName}님의 설문결과
+              {surveyData && surveyData[0]?.manualInput === 1 && (
+                <span className="ml-2 text-sm font-normal text-orange-500">(수동입력)</span>
+              )}
+            </DialogTitle>
             <div className="flex items-center justify-between">
               <DialogDescription>건강 설문조사 응답 내역입니다.</DialogDescription>
               {surveyData && surveyData.length > 0 && (
@@ -966,16 +976,51 @@ export default function GeneralCustomersPage() {
             </div>
           </DialogHeader>
 
-          <div className="h-145 overflow-y-auto">
+          <div className="h-155 overflow-y-auto">
           {surveyLoading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : !surveyData || surveyData.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-6">
-              <p className="text-muted-foreground">설문 진행 중 간편인증 단계에서 고객 변심으로 취소되어 저장된 설문 내용이 없습니다.</p>
-              <p className="text-sm text-muted-foreground">회원가입은 완료되었으나 설문이 완료되지 않은 고객입니다.</p>
-            </div>
+            <SurveyManualEntry
+              key={surveyMemberIdx ?? "none"}
+              memberIdx={surveyMemberIdx}
+              memberName={surveyMemberName}
+              defaultBirth={surveyMemberBirth}
+              onSaved={async () => {
+                if (surveyMemberIdx == null) return;
+                setSurveyLoading(true);
+                try {
+                  const data = await surveyApi.getByMember(surveyMemberIdx);
+                  setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
+                } catch {
+                  setSurveyData([]);
+                } finally {
+                  setSurveyLoading(false);
+                }
+              }}
+            />
+          ) : surveyEditing ? (
+            <SurveyManualEntry
+              key={`edit-${surveyMemberIdx ?? "none"}`}
+              memberIdx={surveyMemberIdx}
+              memberName={surveyMemberName}
+              editingSurvey={surveyData[0]}
+              onCancel={() => setSurveyEditing(false)}
+              onSaved={async () => {
+                setSurveyEditing(false);
+                if (surveyMemberIdx == null) return;
+                setSurveyLoading(true);
+                try {
+                  const data = await surveyApi.getByMember(surveyMemberIdx);
+                  setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
+                } catch {
+                  setSurveyData([]);
+                } finally {
+                  setSurveyLoading(false);
+                }
+              }}
+            />
           ) : (
             <div className="space-y-6">
               {surveyData.map((survey, i) => {
@@ -1005,7 +1050,14 @@ export default function GeneralCustomersPage() {
 
                     {/* 신체 정보 */}
                     <div>
-                      <h4 className="text-sm font-semibold mb-2">신체정보 / 생활습관</h4>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-semibold">신체정보 / 생활습관</h4>
+                        {survey.manualInput === 1 && (
+                          <Button size="sm" variant="outline" onClick={() => setSurveyEditing(true)}>
+                            다시입력
+                          </Button>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         <SurveyItem label="키" value={`${survey.height} cm`} />
                         <SurveyItem label="몸무게" value={`${survey.weight} kg`} />

@@ -193,6 +193,7 @@ export interface Survey {
   diff: number;
   age: number;
   healthage: number;
+  manualInput?: number | null; // 1: 관리자 수동 입력, 0/NULL: 웹·앱 제출
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;

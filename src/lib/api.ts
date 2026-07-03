@@ -155,6 +155,18 @@ export const surveyApi = {
   getById: (idx: number) => request<import("@/types").Survey>(`/survey/${idx}`),
   getByMember: (memberIdx: number) =>
     request<import("@/types").Survey[]>(`/survey/member/${memberIdx}`),
+  // 관리자 수동 설문 저장 (간편인증 변심으로 설문 누락된 고객용)
+  create: (data: Partial<import("@/types").Survey>) =>
+    request<import("@/types").SqlResult>("/survey", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  // 수동 입력 설문 수정 (잘못 입력 정정용) — 서버는 healthage 재계산 없이 전달값 저장
+  update: (idx: number, data: Partial<import("@/types").Survey>) =>
+    request<import("@/types").SqlResult>(`/survey/${idx}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }),
 };
 
 // ServiceCode API
