@@ -138,7 +138,7 @@ export default function SurveyManualEntry({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {isEditing ? (
         <p className="text-sm text-muted-foreground">
           입력한 설문 내용을 다시 입력해 수정합니다. 저장하면 기존 내용을 덮어씁니다.
@@ -151,7 +151,7 @@ export default function SurveyManualEntry({
       )}
 
       {/* 생체나이 요약 (입력값 기반 실시간 계산) */}
-      <div className="rounded-lg border p-4">
+      <div className="rounded-lg border p-3">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <p className="text-xs text-muted-foreground">실제 나이</p>
@@ -248,25 +248,24 @@ export default function SurveyManualEntry({
               </Select>
             </div>
           ))}
+          {/* 저장 / 취소 (8번째 셀) */}
+          <div className="flex items-stretch gap-2">
+            {isEditing && onCancel && (
+              <Button size="sm" variant="outline" className="h-full! flex-1" onClick={onCancel} disabled={saving}>
+                취소
+              </Button>
+            )}
+            <Button
+              size="sm"
+              className="h-full! flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+              disabled={!canSave}
+              onClick={() => setConfirmOpen(true)}
+            >
+              {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+              {isEditing ? "수정 저장" : "설문 저장"}
+            </Button>
+          </div>
         </div>
-      </div>
-
-      {/* 저장 / 취소 */}
-      <div className="flex justify-end gap-2">
-        {isEditing && onCancel && (
-          <Button size="sm" variant="outline" onClick={onCancel} disabled={saving}>
-            취소
-          </Button>
-        )}
-        <Button
-          size="sm"
-          className="bg-blue-500 hover:bg-blue-600 text-white"
-          disabled={!canSave}
-          onClick={() => setConfirmOpen(true)}
-        >
-          {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-          {isEditing ? "수정 저장" : "설문 저장"}
-        </Button>
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

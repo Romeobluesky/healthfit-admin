@@ -44,7 +44,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Trash2, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw, Calendar, Building2, Route, ClipboardList } from "lucide-react";
+import { Trash2, MessageCircleMore, Search, Users, ChevronsLeft, ChevronLeft, ChevronRight, ChevronsRight, Download, MapPin, Loader2, MousePointer2, MousePointer2Off, RefreshCw, Calendar, Building2, Route, Fingerprint, ClipboardList } from "lucide-react";
 import { memberApi, managerMemberApi, surveyApi, memoCustomerApi } from "@/lib/api";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
@@ -101,6 +101,7 @@ export default function GeneralCustomersPage() {
   const [inflowPathFilter, setInflowPathFilter] = useState("all");
   const [partnerFilter, setPartnerFilter] = useState("all");
   const [partnershipFilter, setPartnershipFilter] = useState("all");
+  const [partnerIdSearch, setPartnerIdSearch] = useState("");
   const [partners, setPartners] = useState<ManagerMember[]>([]);
   const [allManagers, setAllManagers] = useState<ManagerMember[]>([]);
   const pageSize = 10;
@@ -500,7 +501,12 @@ export default function GeneralCustomersPage() {
       matchesInflowPath = (m.inflowPath || "app") === inflowPathFilter;
     }
 
-    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion && matchesButtonCheck && matchesInflowPath;
+    let matchesPartnerId = true;
+    if (partnerIdSearch) {
+      matchesPartnerId = m.partnerId?.includes(partnerIdSearch) ?? false;
+    }
+
+    return matchesSearch && matchesDate && notDeleted && matchesStatus && matchesRegion && matchesButtonCheck && matchesInflowPath && matchesPartnerId;
   });
 
   // 일반고객: HealthExaminationHistory !== "Y"
@@ -513,7 +519,7 @@ export default function GeneralCustomersPage() {
   }, [generalMembers, currentPage]);
 
   const isAdminUser = !!user && isAdmin(user.permission);
-  const colCount = 13 + (isAdminUser ? 2 : 0);
+  const colCount = 14 + (isAdminUser ? 2 : 0);
 
   // 현재 페이지 전체선택 상태
   const allPageSelected =
@@ -532,12 +538,12 @@ export default function GeneralCustomersPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter, partnerIdSearch]);
 
   // 필터 변경 시 선택 초기화
   useEffect(() => {
     setSelectedRows(new Set());
-  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter]);
+  }, [search, startDate, endDate, statusFilter, searchRegion1, searchRegion2, buttonCheckFilter, partnerFilter, partnershipFilter, inflowPathFilter, partnerIdSearch]);
 
   // 파트너 필터 변경 시 협력사 필터 초기화 (상위가 바뀌면 하위 옵션이 달라짐)
   useEffect(() => {
@@ -569,6 +575,7 @@ export default function GeneralCustomersPage() {
         등록일: formatDate(member.createdAt),
         파트너: info.partnerName ?? "-",
         협력사: info.partnershipName ?? "-",
+        유입ID: member.partnerId ?? "-",
         이름: member.name,
         전화번호: formatPhone(member.phone),
         생년월일: member.birthDate || "-",
@@ -666,6 +673,16 @@ export default function GeneralCustomersPage() {
               </Select>
             </div>
           )}
+          <div className="flex items-center gap-2">
+            <Fingerprint className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground whitespace-nowrap">유입ID</span>
+            <Input
+              className="w-32"
+              placeholder="유입ID"
+              value={partnerIdSearch}
+              onChange={(e) => setPartnerIdSearch(e.target.value)}
+            />
+          </div>
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground whitespace-nowrap">지역</span>
@@ -803,6 +820,7 @@ export default function GeneralCustomersPage() {
                 <TableHead className="text-white">등록일</TableHead>
                 <TableHead className="text-white">파트너</TableHead>
                 <TableHead className="text-white">협력사</TableHead>
+                <TableHead className="text-white">유입ID</TableHead>
                 <TableHead className="text-white">이름</TableHead>
                 <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">생년월일</TableHead>
@@ -848,6 +866,7 @@ export default function GeneralCustomersPage() {
                     <TableCell>{formatDate(member.createdAt)}</TableCell>
                     <TableCell style={{ color: "#04C6F7" }}>{info.partnerName ?? "-"}</TableCell>
                     <TableCell style={{ color: "#04C6F7" }}>{info.partnershipName ?? "-"}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">{member.partnerId ?? "-"}</TableCell>
                     <TableCell className="font-medium">{member.name}</TableCell>
                     <TableCell>{formatPhone(member.phone)}</TableCell>
                     <TableCell>{member.birthDate || "-"}</TableCell>
@@ -976,60 +995,61 @@ export default function GeneralCustomersPage() {
             </div>
           </DialogHeader>
 
-          <div className="h-155 overflow-y-auto">
+          <div className="max-h-[75vh] overflow-y-auto">
           {surveyLoading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : !surveyData || surveyData.length === 0 ? (
-            <SurveyManualEntry
-              key={surveyMemberIdx ?? "none"}
-              memberIdx={surveyMemberIdx}
-              memberName={surveyMemberName}
-              defaultBirth={surveyMemberBirth}
-              onSaved={async () => {
-                if (surveyMemberIdx == null) return;
-                setSurveyLoading(true);
-                try {
-                  const data = await surveyApi.getByMember(surveyMemberIdx);
-                  setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
-                } catch {
-                  setSurveyData([]);
-                } finally {
-                  setSurveyLoading(false);
-                }
-              }}
-            />
-          ) : surveyEditing ? (
-            <SurveyManualEntry
-              key={`edit-${surveyMemberIdx ?? "none"}`}
-              memberIdx={surveyMemberIdx}
-              memberName={surveyMemberName}
-              editingSurvey={surveyData[0]}
-              onCancel={() => setSurveyEditing(false)}
-              onSaved={async () => {
-                setSurveyEditing(false);
-                if (surveyMemberIdx == null) return;
-                setSurveyLoading(true);
-                try {
-                  const data = await surveyApi.getByMember(surveyMemberIdx);
-                  setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
-                } catch {
-                  setSurveyData([]);
-                } finally {
-                  setSurveyLoading(false);
-                }
-              }}
-            />
           ) : (
-            <div className="space-y-6">
-              {surveyData.map((survey, i) => {
+            <div className="space-y-4">
+              {surveyEditing ? (
+                <SurveyManualEntry
+                  key={`edit-${surveyMemberIdx ?? "none"}`}
+                  memberIdx={surveyMemberIdx}
+                  memberName={surveyMemberName}
+                  editingSurvey={surveyData![0]}
+                  onCancel={() => setSurveyEditing(false)}
+                  onSaved={async () => {
+                    setSurveyEditing(false);
+                    if (surveyMemberIdx == null) return;
+                    setSurveyLoading(true);
+                    try {
+                      const data = await surveyApi.getByMember(surveyMemberIdx);
+                      setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
+                    } catch {
+                      setSurveyData([]);
+                    } finally {
+                      setSurveyLoading(false);
+                    }
+                  }}
+                />
+              ) : !surveyData || surveyData.length === 0 ? (
+                <SurveyManualEntry
+                  key={surveyMemberIdx ?? "none"}
+                  memberIdx={surveyMemberIdx}
+                  memberName={surveyMemberName}
+                  defaultBirth={surveyMemberBirth}
+                  onSaved={async () => {
+                    if (surveyMemberIdx == null) return;
+                    setSurveyLoading(true);
+                    try {
+                      const data = await surveyApi.getByMember(surveyMemberIdx);
+                      setSurveyData(Array.isArray(data) && data.length > 0 ? [data[0]] : []);
+                    } catch {
+                      setSurveyData([]);
+                    } finally {
+                      setSurveyLoading(false);
+                    }
+                  }}
+                />
+              ) : (
+                surveyData.map((survey, i) => {
                 const diff = survey.healthage - survey.age;
                 return (
                   <div key={survey.idx} className="space-y-4">
 
                     {/* 생체나이 요약 */}
-                    <div className="rounded-lg border p-4">
+                    <div className="rounded-lg border p-3">
                       <div className="grid grid-cols-3 gap-4 text-center">
                         <div>
                           <p className="text-xs text-muted-foreground">실제 나이</p>
@@ -1071,7 +1091,8 @@ export default function GeneralCustomersPage() {
                     {i < surveyData.length - 1 && <hr />}
                   </div>
                 );
-              })}
+                })
+              )}
 
               {/* 상담내용 (메모) */}
               <div>
@@ -1087,9 +1108,13 @@ export default function GeneralCustomersPage() {
                 {memoLoading ? (
                   <p className="text-sm text-muted-foreground py-4 text-center">불러오는 중...</p>
                 ) : (
-                  <div className="rounded-lg border p-3 space-y-3">
+                  <div className="rounded-lg border p-3 space-y-2">
                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{memo ? `${user?.name ?? memo.mb_id}(${memo.mb_id})` : user ? `${user.name}(${user.id})` : ""}</span>
+                      <span>{(() => {
+                        const name = memo ? (user?.name ?? memo.mb_id) : user?.name;
+                        const id = memo ? memo.mb_id : user?.id;
+                        return name && name !== "null" ? `${name}(${id})` : "";
+                      })()}</span>
                       {memo && (
                         <span>{formatDate(memo.updatedAt || memo.createdAt)}</span>
                       )}
@@ -1142,7 +1167,7 @@ export default function GeneralCustomersPage() {
                       )}
                     </div>
                     <Textarea
-                      className="min-h-32 max-h-32 overflow-y-auto resize-none"
+                      className="min-h-24 max-h-24 overflow-y-auto resize-none"
                       placeholder="상담 내용을 입력하세요..."
                       value={memoContent}
                       onChange={(e) => setMemoContent(e.target.value)}
