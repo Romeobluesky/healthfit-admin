@@ -595,6 +595,10 @@ export default function GeneralCustomersPage() {
     const partnershipLabel = partnershipFilter !== "all"
       ? `_${managerByIdMap.get(partnershipFilter)?.organization || partnershipFilter}`
       : "";
+    const partnerIdInfo = partnerIdSearch ? getPartnerInfo(partnerIdSearch) : null;
+    const partnerIdLabel = partnerIdSearch
+      ? `${partnerIdInfo?.partnerName ? `_${partnerIdInfo.partnerName}` : ""}${partnerIdInfo?.partnershipName ? `_${partnerIdInfo.partnershipName}` : ""}_유입ID_${partnerIdSearch}`
+      : "";
     const dateRange = startDate || endDate
       ? `_${startDate || "시작"}~${endDate || "현재"}`
       : "";
@@ -602,7 +606,7 @@ export default function GeneralCustomersPage() {
     const regionLabel = searchRegion1 !== "all" ? `_${searchRegion1}${searchRegion2 !== "all" ? ` ${searchRegion2}` : ""}` : "";
     const buttonCheckLabel = buttonCheckFilter !== "all" ? `_${buttonCheckFilter === "1" ? "클릭" : "미클릭"}` : "";
     const inflowPathLabel = inflowPathFilter !== "all" ? `_${inflowPathFilter === "web" ? "WEB" : "APP"}` : "";
-    XLSX.writeFile(wb, `일반고객${partnerLabel}${partnershipLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}${inflowPathLabel}.xlsx`);
+    XLSX.writeFile(wb, `일반고객${partnerLabel}${partnershipLabel}${partnerIdLabel}${dateRange}${regionLabel}${statusLabel}${buttonCheckLabel}${inflowPathLabel}.xlsx`);
   };
 
   return (

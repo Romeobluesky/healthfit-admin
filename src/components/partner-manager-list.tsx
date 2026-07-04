@@ -381,13 +381,13 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="w-16 text-white">번호</TableHead>
                 <TableHead className="text-white">권한</TableHead>
-                <TableHead className="text-white">소속</TableHead>
-                <TableHead className="text-white">아이디</TableHead>
-                <TableHead className="text-white">담당자</TableHead>
-                <TableHead className="text-white">전화번호</TableHead>
                 {isPartnershipMode && (
                   <TableHead className="text-white">상위 파트너</TableHead>
                 )}
+                <TableHead className="text-white">{isPartnershipMode ? "협력사" : "소속"}</TableHead>
+                <TableHead className="text-white">아이디</TableHead>
+                <TableHead className="text-white">담당자</TableHead>
+                <TableHead className="text-white">전화번호</TableHead>
                 <TableHead className="text-white">랜딩페이지 URL</TableHead>
                 <TableHead className="text-white">생성일</TableHead>
                 <TableHead className="text-white">상태</TableHead>
@@ -422,21 +422,21 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
                     >
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{getPermissionLabel(partner.permission)}</TableCell>
-                      <TableCell>{partner.organization}</TableCell>
-                      <TableCell>{partner.id}</TableCell>
-                      <TableCell className="font-medium">{partner.name}</TableCell>
-                      <TableCell>{formatPhone(partner.phone)}</TableCell>
                       {isPartnershipMode && (
                         <TableCell>
                           {parentPartner ? (
                             <span className="text-xs">
-                              {parentPartner.organization} ({parentPartner.id})
+                              {parentPartner.organization}
                             </span>
                           ) : (
                             <span className="text-xs text-muted-foreground">-</span>
                           )}
                         </TableCell>
                       )}
+                      <TableCell>{partner.organization}</TableCell>
+                      <TableCell>{partner.id}</TableCell>
+                      <TableCell className="font-medium">{partner.name}</TableCell>
+                      <TableCell>{formatPhone(partner.phone)}</TableCell>
                       <TableCell>
                         {getPartnerUrl(partner.id) ? (
                           <div className="flex items-center gap-1">
@@ -564,7 +564,7 @@ export function PartnerManagerList({ type }: { type: PartnerManagerType }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>소속</Label>
+                <Label>{isPartnershipMode ? "협력사" : "소속"}</Label>
                 <Input
                   value={form.organization}
                   onChange={(e) =>
